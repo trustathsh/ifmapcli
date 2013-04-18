@@ -9,7 +9,7 @@
 	<!-- general project information -->
 	<groupId>de.fhhannover.inform.trust</groupId>
 	<artifactId>ifmapcli</artifactId>
-	<version>0.0.2</version>
+	<version>0.0.3</version>
 	<packaging>pom</packaging>
 	<name>ifmapcli</name>
 	<url>http://trust.inform.fh-hannover.de</url>
@@ -82,7 +82,7 @@
 			<dependency>
 				<groupId>de.fhhannover.inform.trust.ifmapcli</groupId>
 				<artifactId>common</artifactId>
-				<version>0.0.2</version>
+				<version>0.0.3</version>
 			</dependency>
 			<dependency>
 				<groupId>junit</groupId>
@@ -93,7 +93,7 @@
 			<dependency>
 				<groupId>de.fhhannover.inform.trust</groupId>
 				<artifactId>ifmapj</artifactId>
-				<version>0.1.4</version>
+				<version>0.1.5</version>
 			</dependency>
 			<dependency>
 				<groupId>commons-cli</groupId>
