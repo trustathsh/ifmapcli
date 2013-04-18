@@ -1,0 +1,55 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<artifactId>ifmapcli</artifactId>
+		<groupId>de.fhhannover.inform.trust</groupId>
+		<version>0.0.2</version>
+	</parent>
+
+	<groupId>de.fhhannover.inform.trust.ifmapcli</groupId>
+	<artifactId>req-inv</artifactId>
+	<packaging>jar</packaging>
+	<name>req-inv</name>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+						<configuration>
+							<transformers>
+								<transformer
+									implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+									<mainClass>de.fhhannover.inform.trust.ifmapcli.ReqInv</mainClass>
+								</transformer>
+							</transformers>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>license-maven-plugin</artifactId>
+				<configuration>
+					<descriptionTemplate>${basedir}/../src/license/description_template.ftl</descriptionTemplate>
+				</configuration>
+			</plugin>
+
+		</plugins>
+	</build>
+
+	<dependencies>
+		<dependency>
+			<groupId>de.fhhannover.inform.trust.ifmapcli</groupId>
+			<artifactId>common</artifactId>
+		</dependency>
+	</dependencies>
+</project>
