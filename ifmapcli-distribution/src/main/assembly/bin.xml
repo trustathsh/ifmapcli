@@ -39,13 +39,17 @@
 				<include>de.fhhannover.inform.trust.ifmapcli:feature2</include>
 				<include>de.fhhannover.inform.trust.ifmapcli:featureSingle</include>
 			</includes>
+			
 			<binaries>
-				<includeDependencies>false</includeDependencies>
-				<outputDirectory>.</outputDirectory>
-				<attachmentClassifier>shaded</attachmentClassifier>
-				<outputFileNameMapping>${module.artifactId}.${module.extension}</outputFileNameMapping>
+				<outputDirectory>modules/${artifactId}</outputDirectory>
 				<unpack>false</unpack>
+				<includeDependencies>false</includeDependencies>
+				<attachmentClassifier>bin</attachmentClassifier>
+				<outputFileNameMapping>${module.artifactId}.${module.extension}</outputFileNameMapping>
 			</binaries>
+			
 		</moduleSet>
 	</moduleSets>
+
+	
 </assembly>
