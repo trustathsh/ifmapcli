@@ -6,19 +6,80 @@
 	<formats>
 		<format>zip</format>
 	</formats>
+	<includeBaseDirectory>false</includeBaseDirectory>
 
 	<fileSets>
 		<fileSet>
-			<directory>${basedir}</directory>
+			<directory>${basedir}/../</directory>
 			<includes>
-				<include>src/</include>
 				<include>pom.xml</include>
 				<include>README.txt</include>
 				<include>LICENSE.txt</include>
 				<include>NOTICE.txt</include>
 				<include>CHANGELOG.txt</include>
 			</includes>
-			<outputDirectory></outputDirectory>
+		</fileSet>
+		<fileSet>
+			<directory>${basedir}/src</directory>
+			<outputDirectory>${artifactId}/src</outputDirectory>
+		</fileSet>
+		<fileSet>
+			<directory>${basedir}/</directory>
+			<includes>
+				<include>pom.xml</include>
+			</includes>
+			<outputDirectory>${artifactId}</outputDirectory>
 		</fileSet>
 	</fileSets>
+
+	<moduleSets>
+		<moduleSet>
+
+			<sources>
+				<fileSets>
+					<fileSet>
+						<directory>src</directory>
+						<outputDirectory>src</outputDirectory>
+					</fileSet>
+					<fileSet>
+						<includes>
+							<include>pom.xml</include>
+						</includes>
+					</fileSet>
+				</fileSets>
+			</sources>
+
+			<!-- Enable access to all projects in the current multimodule build! -->
+			<useAllReactorProjects>true</useAllReactorProjects>
+
+			<!-- Now, select which projects to include in this module-set. -->
+			<includes>
+				<include>de.fhhannover.inform.trust.ifmapcli:ar-dev</include>
+				<include>de.fhhannover.inform.trust.ifmapcli:ar-ip</include>
+				<include>de.fhhannover.inform.trust.ifmapcli:ar-mac</include>
+				<include>de.fhhannover.inform.trust.ifmapcli:auth-as</include>
+				<include>de.fhhannover.inform.trust.ifmapcli:auth-by</include>
+				<include>de.fhhannover.inform.trust.ifmapcli:cap</include>
+				<include>de.fhhannover.inform.trust.ifmapcli:dev-attr</include>
+				<include>de.fhhannover.inform.trust.ifmapcli:dev-ip</include>
+				<include>de.fhhannover.inform.trust.ifmapcli:ip-disc-by</include>
+				<include>de.fhhannover.inform.trust.ifmapcli:ip-mac</include>
+				<include>de.fhhannover.inform.trust.ifmapcli:layer2-info</include>
+				<include>de.fhhannover.inform.trust.ifmapcli:req-inv</include>
+				<include>de.fhhannover.inform.trust.ifmapcli:mac-disc-by</include>
+				<include>de.fhhannover.inform.trust.ifmapcli:pdp</include>
+				<include>de.fhhannover.inform.trust.ifmapcli:purge</include>
+				<include>de.fhhannover.inform.trust.ifmapcli:role</include>
+				<include>de.fhhannover.inform.trust.ifmapcli:search</include>
+				<include>de.fhhannover.inform.trust.ifmapcli:subscribe</include>
+				<include>de.fhhannover.inform.trust.ifmapcli:event</include>
+				<include>de.fhhannover.inform.trust.ifmapcli:perf1</include>
+				<include>de.fhhannover.inform.trust.ifmapcli:feature</include>
+				<include>de.fhhannover.inform.trust.ifmapcli:feature2</include>
+				<include>de.fhhannover.inform.trust.ifmapcli:featureSingle</include>
+			</includes>
+		</moduleSet>
+	</moduleSets>
+
+
 </assembly>

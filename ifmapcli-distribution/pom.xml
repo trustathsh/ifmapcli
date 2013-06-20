@@ -20,7 +20,7 @@
 				<configuration>
 					<descriptors>
 						<descriptor>src/main/assembly/bin.xml</descriptor>
-						<!-- <descriptor>src/main/assembly/src.xml</descriptor>-->
+						<descriptor>src/main/assembly/src.xml</descriptor>
 						<descriptor>src/main/assembly/bundle.xml</descriptor>
 					</descriptors>
 				</configuration>
