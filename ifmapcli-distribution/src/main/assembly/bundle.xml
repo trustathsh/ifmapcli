@@ -43,7 +43,6 @@
 				<outputDirectory>${artifactId}</outputDirectory>
 				<unpack>false</unpack>
 				<includeDependencies>true</includeDependencies>
-				<attachmentClassifier>bin</attachmentClassifier>
 				<outputFileNameMapping>${module.artifactId}.${module.extension}</outputFileNameMapping>
 				<dependencySets>
 					<dependencySet>
@@ -65,7 +64,7 @@
 	<fileSets>
 		<fileSet>
 			<directory>${basedir}/../</directory>
-			<outputDirectory>/</outputDirectory>
+			<outputDirectory>/${artifactId}/</outputDirectory>
 			<includes>
 				<include>README.txt</include>
 				<include>LICENSE.txt</include>

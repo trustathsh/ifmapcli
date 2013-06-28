@@ -44,7 +44,6 @@
 				<outputDirectory>modules/${artifactId}</outputDirectory>
 				<unpack>false</unpack>
 				<includeDependencies>false</includeDependencies>
-				<attachmentClassifier>bin</attachmentClassifier>
 				<outputFileNameMapping>${module.artifactId}.${module.extension}</outputFileNameMapping>
 			</binaries>
 			

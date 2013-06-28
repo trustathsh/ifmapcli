@@ -15,6 +15,24 @@
 	<name>dev-char</name>
 	<build>
 		<plugins>
+		
+					<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<configuration>
+					<archive>
+						<manifest>
+							<mainClass>de.fhhannover.inform.trust.ifmapcli.DevChar</mainClass>
+							<addClasspath>true</addClasspath>
+							<classpathPrefix>./lib/</classpathPrefix>
+						</manifest>
+						<manifestEntries>
+							<Class-Path>./lib/</Class-Path>
+						</manifestEntries>
+					</archive>
+				</configuration>
+			</plugin>
+			
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>license-maven-plugin</artifactId>

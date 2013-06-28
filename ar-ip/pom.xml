@@ -17,21 +17,27 @@
 
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-assembly-plugin</artifactId>
-				<version>2.2.2</version>
+				<artifactId>maven-jar-plugin</artifactId>
 				<configuration>
 					<archive>
 						<manifest>
-							<mainClass>de.fhhannover.inform.trust.ifmapcli.ArIp</mainClass>
+							<mainClass>de.fhhannover.inform.trust.ifmapcli.ArDev</mainClass>
 							<addClasspath>true</addClasspath>
 							<classpathPrefix>./lib/</classpathPrefix>
 						</manifest>
 						<manifestEntries>
-							<Class-Path>./lib</Class-Path>
+							<Class-Path>./lib/</Class-Path>
 						</manifestEntries>
 					</archive>
+				</configuration>
+			</plugin>
+			
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<version>2.2.2</version>
+				<configuration>
 					<descriptors>
-						<descriptor>src/main/assembly/bin.xml</descriptor>
 						<descriptor>src/main/assembly/src.xml</descriptor>
 					</descriptors>
 				</configuration>
