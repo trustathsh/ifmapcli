@@ -72,6 +72,7 @@
 		<module>feature</module>
 		<module>feature2</module>
 		<module>featureSingle</module>
+		<module>validity-tool</module>
 
 		<!-- the distribution module must be the last one -->
 		<module>ifmapcli-distribution</module>
@@ -83,6 +84,11 @@
 				<groupId>de.fhhannover.inform.trust.ifmapcli</groupId>
 				<artifactId>common</artifactId>
 				<version>0.0.3</version> 
+			</dependency>
+    		<dependency>
+				<groupId>de.hshannover.inform.trust</groupId>
+				<artifactId>ifmapvaliditychecker</artifactId>
+				<version>0.0.1</version> 
 			</dependency>
 			<dependency>
 				<groupId>junit</groupId>

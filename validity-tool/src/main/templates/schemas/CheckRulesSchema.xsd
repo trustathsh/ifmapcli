@@ -1,0 +1,59 @@
+<?xml version="1.0" ?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+	xmlns:ifmap="http://www.trustedcomputinggroup.org/2010/IFMAP/2"
+	xmlns="http://www.trustedcomputinggroup.org/2010/IFMAP-METADATA/2"
+	targetNamespace="http://www.trustedcomputinggroup.org/2010/IFMAP-METADATA/2">
+
+	<!-- access-request-device is link metadata that associates an access-request 
+		identifier with a device identifier -->
+
+	<xsd:element name="IfmapValidityCheck">
+		<xsd:complexType>
+			<xsd:choice maxOccurs="unbounded">
+				<xsd:element name="metadata">
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:element ref="ifmap-cardinality" minOccurs="1"
+								maxOccurs="1" />
+							<xsd:element ref="specific-attribute" minOccurs="0"
+								maxOccurs="unbounded"/>									
+							<xsd:element ref="identifier1" minOccurs="1"
+								maxOccurs="unbounded" />
+							<xsd:element ref="identifier2" minOccurs="0"
+								maxOccurs="1" />
+							<xsd:element ref="message" minOccurs="1" maxOccurs="1" />
+						</xsd:sequence>
+						<xsd:attribute name="name" type="xsd:string" use="required" />
+					</xsd:complexType>
+				</xsd:element>
+			</xsd:choice>
+		</xsd:complexType>
+	</xsd:element>
+	
+	<xsd:element name="ifmap-cardinality">
+		<xsd:complexType>
+			<xsd:attribute name="name" use="required">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:enumeration value="singleValue" />
+						<xsd:enumeration value="multiValue" />
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:attribute>
+		</xsd:complexType>
+	</xsd:element>
+	
+	<xsd:element name="specific-attribute">
+		<xsd:complexType>
+			<xsd:attribute name="name" use="required" type="xsd:string"/>
+			<xsd:attribute name="value" use="optional" type="xsd:string"/>
+			<xsd:attribute name="min" use="required" type="xsd:nonNegativeInteger"/>
+			<xsd:attribute name="max" use="required" type="xsd:nonNegativeInteger"/>
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="identifier1" type="xsd:string" />
+	<xsd:element name="identifier2" type="xsd:string" />
+	<xsd:element name="message" type="xsd:string" />
+
+</xsd:schema>

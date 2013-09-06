@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ifmap:IfmapValidityCheck
+	xmlns:ifmap="http://www.trustedcomputinggroup.org/2010/IFMAP-METADATA/2"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.trustedcomputinggroup.org/2010/IFMAP-METADATA/2 StandardMetadata.xsd ">
+	
+    <!--  !!!!!!!Template!!!!!!!!!!!!!	
+	<metadata name="">
+	    <ifmap:ifmap-cardinality name="singleValue/multiValue"/>
+	    <ifmap:identifier1></ifmap:identifier1>
+	    <ifmap:identifier2></ifmap:identifier2>
+	    <ifmap:message></ifmap:message>
+	</metadata>
+-->
+	
+	<metadata name="access-request-device">
+		<ifmap:ifmap-cardinality name="singleValue"/>
+		<ifmap:identifier1>ar</ifmap:identifier1>
+		<ifmap:identifier2>dev</ifmap:identifier2>
+		<ifmap:message>Clients MUST publish this singleValue metadata only between: access-request and device</ifmap:message>
+	</metadata>
+
+	<metadata name="access-request-ip">
+		<ifmap:ifmap-cardinality name="singleValue"/>
+		<ifmap:identifier1>ar</ifmap:identifier1>
+		<ifmap:identifier2>ip</ifmap:identifier2>
+		<ifmap:message>Clients MUST publish this singleValue metadata only between: access-request and ip-address</ifmap:message>
+	</metadata>
+	
+	<metadata name="access-request-mac">
+		<ifmap:ifmap-cardinality name="singleValue"/>
+		<ifmap:identifier1>ar</ifmap:identifier1>
+		<ifmap:identifier2>mac</ifmap:identifier2>
+		<ifmap:message>Clients MUST publish this singleValue metadata only between: access-request and mac-address</ifmap:message>
+	</metadata>
+	
+	<metadata name="authenticated-as">
+		<ifmap:ifmap-cardinality name="singleValue"/>
+		<ifmap:identifier1>ar</ifmap:identifier1>
+		<ifmap:identifier2>id</ifmap:identifier2>
+		<ifmap:message>Clients MUST publish this singleValue metadata only between: access-request and non-extended identity</ifmap:message>
+	</metadata>
+	
+	<metadata name="authenticated-by">
+		<ifmap:ifmap-cardinality name="singleValue"/>
+		<ifmap:identifier1>ar</ifmap:identifier1>
+		<ifmap:identifier2>dev</ifmap:identifier2>
+		<ifmap:message>Clients MUST publish this singleValue metadata only between: access-request and device</ifmap:message>
+	</metadata>
+	
+	<metadata name="capability">
+		<ifmap:ifmap-cardinality name="multiValue"/>
+		<ifmap:specific-attribute name="name" value="" min="1" max="1" />
+		<ifmap:identifier1>ar</ifmap:identifier1>
+		<ifmap:message>Recommended publish this multiValue metadata for: access-request</ifmap:message>
+	</metadata>
+	
+	<metadata name="device-attribute">
+		<ifmap:ifmap-cardinality name="multiValue"/>
+		<ifmap:specific-attribute name="name" value="" min="1" max="1" />
+		<ifmap:identifier1>ar</ifmap:identifier1>
+		<ifmap:identifier2>dev</ifmap:identifier2>
+		<ifmap:message>Recommended publish this multiValue metadata for: access-request and device</ifmap:message>
+	</metadata>
+	
+	<metadata name="device-characteristic">
+	    <ifmap:ifmap-cardinality name="multiValue"/>
+	    <ifmap:specific-attribute name="discovered-time" value="" min="1" max="1" />
+	    <ifmap:specific-attribute name="discoverer-id" value="" min="1" max="1" />
+	    <ifmap:specific-attribute name="discovery-method" value="" min="1" max="1" />
+	    <ifmap:identifier1>ar</ifmap:identifier1>
+	    <ifmap:identifier1>ip</ifmap:identifier1>
+	    <ifmap:identifier1>mac</ifmap:identifier1>
+	    <ifmap:identifier2>dev</ifmap:identifier2>
+	    <ifmap:message>Recommended publish this multiValue metadata for: access-request and device, 
+	        ip-address and device, or mac-address and device</ifmap:message>
+	</metadata>
+		
+	<metadata name="device-ip">
+	    <ifmap:ifmap-cardinality name="singleValue"/>
+	    <ifmap:identifier1>dev</ifmap:identifier1>
+	    <ifmap:identifier2>ip</ifmap:identifier2>
+	    <ifmap:message>Clients MUST publish this singleValue metadata only between: device and ip-address</ifmap:message>
+	</metadata>
+
+	<metadata name="discovered-by">
+	    <ifmap:ifmap-cardinality name="singleValue"/>
+	    <ifmap:identifier1>ip</ifmap:identifier1>
+	    <ifmap:identifier1>mac</ifmap:identifier1>
+	    <ifmap:identifier2>dev</ifmap:identifier2>
+	    <ifmap:message>Clients MUST publish this singleValue metadata only between: ip-address and device or
+	         mac-address and device</ifmap:message>
+	</metadata>
+	
+	<metadata name="enforcement-report">
+	    <ifmap:ifmap-cardinality name="multiValue"/>
+	    <ifmap:specific-attribute name="enforcement-action" value="" min="1" max="1" />
+	    <ifmap:identifier1>ip</ifmap:identifier1>
+	    <ifmap:identifier1>mac</ifmap:identifier1>
+	    <ifmap:identifier2>dev</ifmap:identifier2>
+	    <ifmap:message>Clients MUST publish this multiValue metadata only between: ip-address and device or
+	         mac-address and device</ifmap:message>
+	</metadata>
+	
+	<metadata name="event">
+	    <ifmap:ifmap-cardinality name="multiValue"/>
+	    <ifmap:specific-attribute name="name" value="" min="1" max="1" />
+	    <ifmap:specific-attribute name="discovered-time" value="" min="1" max="1" />
+	    <ifmap:specific-attribute name="discoverer-id" value="" min="1" max="1" />
+	    <ifmap:specific-attribute name="magnitude" value="" min="1" max="1" />
+	    <ifmap:specific-attribute name="confidence" value="" min="1" max="1" />
+	    <ifmap:specific-attribute name="significance" value="" min="1" max="1" />
+	    <ifmap:identifier1>ar</ifmap:identifier1>
+		<ifmap:identifier1>id</ifmap:identifier1>
+		<ifmap:identifier1>ip</ifmap:identifier1>
+		<ifmap:identifier1>mac</ifmap:identifier1>
+	    <ifmap:message>Recommended publish this multiValue metadata for: access-request, 
+	        identity, ip-address or mac-address</ifmap:message>
+	</metadata>
+	
+	<metadata name="ip-mac">
+	    <ifmap:ifmap-cardinality name="multiValue"/>
+	    <ifmap:identifier1>ip</ifmap:identifier1>
+		<ifmap:identifier2>mac</ifmap:identifier2>
+	    <ifmap:message>Recommended publish this multiValue metadata for: ip-address and mac-address</ifmap:message>
+	</metadata>
+		
+	<metadata name="layer2-information">
+	    <ifmap:ifmap-cardinality name="multiValue"/>
+	    <ifmap:identifier1>ar</ifmap:identifier1>
+		<ifmap:identifier2>dev</ifmap:identifier2>
+	    <ifmap:message>Recommended publish this multiValue metadata for: access-request and device</ifmap:message>
+	</metadata>
+	
+	<metadata name="location">
+	    <ifmap:ifmap-cardinality name="multiValue"/>
+	    <ifmap:specific-attribute name="location-information" value="" min="1" max="100" />
+	    <ifmap:specific-attribute name="discovered-time" value="" min="1" max="1" />
+	    <ifmap:specific-attribute name="discoverer-id" value="" min="1" max="1" />
+	    <ifmap:identifier1>id</ifmap:identifier1>
+		<ifmap:identifier1>ip</ifmap:identifier1>
+		<ifmap:identifier1>mac</ifmap:identifier1>
+	    <ifmap:message>Recommended publish this multiValue metadata for: identity, ip-address or mac-address</ifmap:message>
+	</metadata>
+	
+	<metadata name="request-for-investigation">
+	    <ifmap:ifmap-cardinality name="multiValue"/>
+	   	<ifmap:identifier1>ip</ifmap:identifier1>
+	    <ifmap:identifier1>mac</ifmap:identifier1>
+	    <ifmap:identifier2>dev</ifmap:identifier2>
+	    <ifmap:message>Recommended publish this multiValue metadata for: device and mac-address or device and ip-address</ifmap:message>
+	</metadata>
+	
+	<metadata name="role">
+	    <ifmap:ifmap-cardinality name="multiValue"/>
+	    <ifmap:specific-attribute name="name" value="" min="1" max="1" />
+	   	<ifmap:identifier1>ar</ifmap:identifier1>
+	    <ifmap:identifier2>id</ifmap:identifier2>
+	    <ifmap:message>Recommended publish this multiValue metadata for: access-request and identity</ifmap:message>
+	</metadata>
+	
+	<metadata name="unexpected-behavior">
+	    <ifmap:ifmap-cardinality name="multiValue"/>
+	   	<ifmap:specific-attribute name="discovered-time" value="" min="1" max="1" />
+	    <ifmap:specific-attribute name="discoverer-id" value="" min="1" max="1" />
+	    <ifmap:specific-attribute name="magnitude" value="" min="1" max="1" />
+	    <ifmap:specific-attribute name="significance" value="" min="1" max="1" />
+	   	<ifmap:identifier1>ar</ifmap:identifier1>
+		<ifmap:identifier1>id</ifmap:identifier1>
+		<ifmap:identifier1>ip</ifmap:identifier1>
+		<ifmap:identifier1>mac</ifmap:identifier1>
+	    <ifmap:message>Recommended publish this multiValue metadata for: access-request, identity, 
+	        ip-address or mac-address</ifmap:message>
+	</metadata>
+	
+	<metadata name="wlan-information">
+	    <ifmap:ifmap-cardinality name="singleValue"/>
+	   	<ifmap:specific-attribute name="ssid-unicast-security" value="" min="1" max="100" />
+	    <ifmap:specific-attribute name="ssid-group-security" value="" min="1" max="1" />
+	    <ifmap:specific-attribute name="ssid-management-security" value="" min="1" max="100" />
+	   	<ifmap:identifier1>ar</ifmap:identifier1>
+	    <ifmap:identifier2>dev</ifmap:identifier2>
+	    <ifmap:message>Recommended publish this singleValue metadata for: access-request and device</ifmap:message>
+	</metadata>
+</ifmap:IfmapValidityCheck>

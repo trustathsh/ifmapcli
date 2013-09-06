@@ -38,6 +38,7 @@
 				<include>de.fhhannover.inform.trust.ifmapcli:feature</include>
 				<include>de.fhhannover.inform.trust.ifmapcli:feature2</include>
 				<include>de.fhhannover.inform.trust.ifmapcli:featureSingle</include>
+				<include>de.fhhannover.inform.trust.ifmapcli:validity-tool</include>
 			</includes>
 			<binaries>
 				<outputDirectory>${artifactId}</outputDirectory>
@@ -59,6 +60,21 @@
 			<source>${basedir}/src/main/templates/ifmapcli.jks</source>
 			<outputDirectory>${artifactId}/lib/</outputDirectory>
 		</file>
+
+		<file>
+			<source>${basedir}/src/main/templates/log4j.properties</source>
+			<outputDirectory>${artifactId}/</outputDirectory>
+		</file>
+		
+		<file>
+			<source>${basedir}/../validity-tool/src/main/templates/schemas/CheckRulesSchema.xsd</source>
+			<outputDirectory>/${artifactId}/validity-tool/schemas/</outputDirectory>
+		</file>
+		
+		<file>
+			<source>${basedir}/../validity-tool/src/main/templates/rules/tnc_ifmap_metadata_for_network_security.xml</source>
+			<outputDirectory>/${artifactId}/validity-tool/rules/</outputDirectory>
+		</file>	
 	</files>
 
 	<fileSets>

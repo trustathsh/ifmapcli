@@ -38,6 +38,7 @@
 				<include>de.fhhannover.inform.trust.ifmapcli:feature</include>
 				<include>de.fhhannover.inform.trust.ifmapcli:feature2</include>
 				<include>de.fhhannover.inform.trust.ifmapcli:featureSingle</include>
+				<include>de.fhhannover.inform.trust.ifmapcli:validity-tool</include>
 			</includes>
 			
 			<binaries>
