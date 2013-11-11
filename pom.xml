@@ -9,16 +9,16 @@
 	<!-- general project information -->
 	<groupId>de.fhhannover.inform.trust</groupId>
 	<artifactId>ifmapcli</artifactId>
-	<version>0.0.3</version>
+	<version>0.0.4</version>
 	<packaging>pom</packaging>
 	<name>ifmapcli</name>
-	<url>http://trust.inform.fh-hannover.de</url>
+	<url>http://trust.f4.hs-hannover.de</url>
 	<description>
 	Parent project for all IF-MAP command line tools.
 	</description>
 	<organization>
 		<name>Trust@FHH</name>
-		<url>http://trust.inform.fh-hannover.de</url>
+		<url>http://trust.f4.hs-hannover.de</url>
 	</organization>
 
 	<!-- the project license -->
@@ -48,7 +48,6 @@
 
 	<modules>
 		<module>common</module>
-		<module>ip-mac</module>
 		<module>ar-dev</module>
 		<module>ar-ip</module>
 		<module>ar-mac</module>
@@ -59,6 +58,7 @@
 		<module>dev-char</module>
 		<module>dev-ip</module>
 		<module>ip-disc-by</module>
+		<module>ip-mac</module>
 		<module>mac-disc-by</module>
 		<module>layer2-info</module>
 		<module>role</module>
@@ -82,7 +82,7 @@
 			<dependency>
 				<groupId>de.fhhannover.inform.trust.ifmapcli</groupId>
 				<artifactId>common</artifactId>
-				<version>0.0.3</version>
+				<version>0.0.4</version>
 			</dependency>
 			<dependency>
 				<groupId>junit</groupId>
@@ -115,33 +115,6 @@
 	</dependencies>
 
 	<build>
-		<pluginManagement>
-			<plugins>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-shade-plugin</artifactId>
-					<version>1.4</version>
-					<executions>
-						<execution>
-							<phase>package</phase>
-							<goals>
-								<goal>shade</goal>
-							</goals>
-							<configuration>
-								<shadedArtifactAttached>true</shadedArtifactAttached>
-								<shadedClassifierName>shaded</shadedClassifierName> <!-- Any name that makes sense -->
-							</configuration>
-						</execution>
-					</executions>
-				</plugin>
-				<!-- <plugin> <artifactId>maven-assembly-plugin</artifactId> <version>2.2.2</version> 
-					<configuration> <descriptors> <descriptor>src/assemble/bin.xml</descriptor> 
-					</descriptors> </configuration> <executions> <execution> <id>make-assembly</id> 
-					<phase>package</phase> <goals> <goal>single</goal> </goals> </execution> 
-					</executions> </plugin> -->
-			</plugins>
-		</pluginManagement>
-
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -156,9 +129,7 @@
 				<artifactId>maven-assembly-plugin</artifactId>
 				<version>2.3</version>
 				<configuration>
-					<descriptorRefs>
-						<descriptorRef>project</descriptorRef>
-					</descriptorRefs>
+
 				</configuration>
 			</plugin>
 			<plugin>

@@ -20,7 +20,7 @@ package de.fhhannover.inform.trust.ifmapcli.common;
  * Email: trust@f4-i.fh-hannover.de
  * Website: http://trust.inform.fh-hannover.de/
  * 
- * This file is part of Ifmapcli, version 0.0.3, implemented by the Trust@FHH 
+ * This file is part of Ifmapcli, version 0.0.4, implemented by the Trust@FHH 
  * research group at the Fachhochschule Hannover.
  * %%
  * Copyright (C) 2010 - 2013 Trust@FHH

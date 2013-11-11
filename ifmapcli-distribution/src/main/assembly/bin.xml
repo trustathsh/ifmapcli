@@ -15,6 +15,7 @@
 
 			<!-- Now, select which projects to include in this module-set. -->
 			<includes>
+				<include>de.fhhannover.inform.trust.ifmapcli:common</include>
 				<include>de.fhhannover.inform.trust.ifmapcli:ar-dev</include>
 				<include>de.fhhannover.inform.trust.ifmapcli:ar-ip</include>
 				<include>de.fhhannover.inform.trust.ifmapcli:ar-mac</include>
@@ -41,8 +42,7 @@
 			</includes>
 			<binaries>
 				<includeDependencies>false</includeDependencies>
-				<outputDirectory>.</outputDirectory>
-				<attachmentClassifier>shaded</attachmentClassifier>
+				<outputDirectory>modules/${artifactId}</outputDirectory>
 				<outputFileNameMapping>${module.artifactId}.${module.extension}</outputFileNameMapping>
 				<unpack>false</unpack>
 			</binaries>
