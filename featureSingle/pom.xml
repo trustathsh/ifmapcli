@@ -8,9 +8,9 @@
 	</parent>
 
 	<groupId>de.fhhannover.inform.trust.ifmapcli</groupId>
-	<artifactId>feature-single</artifactId>
+	<artifactId>featureSingle</artifactId>
 	<packaging>jar</packaging>
-	<name>feature-single</name>
+	<name>featureSingle</name>
 
 	<build>
 		<plugins>
