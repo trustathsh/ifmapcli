@@ -15,30 +15,30 @@
 
 			<!-- Now, select which projects to include in this module-set. -->
 			<includes>
-				<include>de.fhhannover.inform.trust.ifmapcli:common</include>
-				<include>de.fhhannover.inform.trust.ifmapcli:ar-dev</include>
-				<include>de.fhhannover.inform.trust.ifmapcli:ar-ip</include>
-				<include>de.fhhannover.inform.trust.ifmapcli:ar-mac</include>
-				<include>de.fhhannover.inform.trust.ifmapcli:auth-as</include>
-				<include>de.fhhannover.inform.trust.ifmapcli:auth-by</include>
-				<include>de.fhhannover.inform.trust.ifmapcli:cap</include>
-				<include>de.fhhannover.inform.trust.ifmapcli:dev-attr</include>
-				<include>de.fhhannover.inform.trust.ifmapcli:dev-ip</include>
-				<include>de.fhhannover.inform.trust.ifmapcli:ip-disc-by</include>
-				<include>de.fhhannover.inform.trust.ifmapcli:ip-mac</include>
-				<include>de.fhhannover.inform.trust.ifmapcli:layer2-info</include>
-				<include>de.fhhannover.inform.trust.ifmapcli:req-inv</include>
-				<include>de.fhhannover.inform.trust.ifmapcli:mac-disc-by</include>
-				<include>de.fhhannover.inform.trust.ifmapcli:pdp</include>
-				<include>de.fhhannover.inform.trust.ifmapcli:purge</include>
-				<include>de.fhhannover.inform.trust.ifmapcli:role</include>
-				<include>de.fhhannover.inform.trust.ifmapcli:search</include>
-				<include>de.fhhannover.inform.trust.ifmapcli:subscribe</include>
-				<include>de.fhhannover.inform.trust.ifmapcli:event</include>
-				<include>de.fhhannover.inform.trust.ifmapcli:perf1</include>
-				<include>de.fhhannover.inform.trust.ifmapcli:feature</include>
-				<include>de.fhhannover.inform.trust.ifmapcli:feature2</include>
-				<include>de.fhhannover.inform.trust.ifmapcli:featureSingle</include>
+				<include>de.hshannover.f4.trust.ifmapcli:common</include>
+				<include>de.hshannover.f4.trust.ifmapcli:ar-dev</include>
+				<include>de.hshannover.f4.trust.ifmapcli:ar-ip</include>
+				<include>de.hshannover.f4.trust.ifmapcli:ar-mac</include>
+				<include>de.hshannover.f4.trust.ifmapcli:auth-as</include>
+				<include>de.hshannover.f4.trust.ifmapcli:auth-by</include>
+				<include>de.hshannover.f4.trust.ifmapcli:cap</include>
+				<include>de.hshannover.f4.trust.ifmapcli:dev-attr</include>
+				<include>de.hshannover.f4.trust.ifmapcli:dev-ip</include>
+				<include>de.hshannover.f4.trust.ifmapcli:ip-disc-by</include>
+				<include>de.hshannover.f4.trust.ifmapcli:ip-mac</include>
+				<include>de.hshannover.f4.trust.ifmapcli:layer2-info</include>
+				<include>de.hshannover.f4.trust.ifmapcli:req-inv</include>
+				<include>de.hshannover.f4.trust.ifmapcli:mac-disc-by</include>
+				<include>de.hshannover.f4.trust.ifmapcli:pdp</include>
+				<include>de.hshannover.f4.trust.ifmapcli:purge</include>
+				<include>de.hshannover.f4.trust.ifmapcli:role</include>
+				<include>de.hshannover.f4.trust.ifmapcli:search</include>
+				<include>de.hshannover.f4.trust.ifmapcli:subscribe</include>
+				<include>de.hshannover.f4.trust.ifmapcli:event</include>
+				<include>de.hshannover.f4.trust.ifmapcli:perf1</include>
+				<include>de.hshannover.f4.trust.ifmapcli:feature</include>
+				<include>de.hshannover.f4.trust.ifmapcli:feature2</include>
+				<include>de.hshannover.f4.trust.ifmapcli:featureSingle</include>
 			</includes>
 			<binaries>
 				<includeDependencies>false</includeDependencies>

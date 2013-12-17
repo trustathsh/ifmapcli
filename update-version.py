@@ -8,7 +8,7 @@ import xml.etree.ElementTree as et
 
 NS = "http://maven.apache.org/POM/4.0.0"
 POM_NS = "{http://maven.apache.org/POM/4.0.0}"
-GROUP_ID = "de.fhhannover.inform.trust.ifmapcli"
+GROUP_ID = "de.hshannover.f4.trust.ifmapcli"
 
 
 def getModuleNames(mainPom):

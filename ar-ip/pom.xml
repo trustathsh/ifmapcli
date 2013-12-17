@@ -2,11 +2,11 @@
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<artifactId>ifmapcli</artifactId>
-		<groupId>de.fhhannover.inform.trust</groupId>
-		<version>0.0.5</version>
+		<groupId>de.hshannover.f4.trust</groupId>
+		<version>0.0.6</version>
 	</parent>
 
-	<groupId>de.fhhannover.inform.trust.ifmapcli</groupId>
+	<groupId>de.hshannover.f4.trust.ifmapcli</groupId>
 	<artifactId>ar-ip</artifactId>
 	<packaging>jar</packaging>
 	<name>ar-ip</name>
@@ -19,7 +19,7 @@
 				<configuration>
 					<archive>
 						<manifest>
-							<mainClass>de.fhhannover.inform.trust.ifmapcli.ArIp</mainClass>
+							<mainClass>de.hshannover.f4.trust.ifmapcli.ArIp</mainClass>
 							<addClasspath>true</addClasspath>
 							<classpathPrefix>./lib/</classpathPrefix>
 						</manifest>
@@ -60,7 +60,7 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>de.fhhannover.inform.trust.ifmapcli</groupId>
+			<groupId>de.hshannover.f4.trust.ifmapcli</groupId>
 			<artifactId>common</artifactId>
 		</dependency>
 		<dependency>

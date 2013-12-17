@@ -9,7 +9,7 @@ Documentation
 =============
 A help message is printed if you start one of the CLI commands with wrong or
 missing parameters. The name of each CLI command indicates its purpose (for
-example ar-dev for publishing access-request-device metadata). 
+example ar-dev for publishing access-request-device metadata).
 
 ifmapcli comes with a keystore that works out-of-the-box with our irond IF-MAP
 server. The password for the keystore is 'ifmapcli'.
@@ -50,7 +50,7 @@ URLs
 ====
 [1] http://www.trustedcomputinggroup.org/resources/tnc_ifmap_binding_for_soap_specification
 
-[2] http://trust.inform.fh-hannover.de
+[2] http://trust.f4.hs-hannover.de
 
 [3] http://www.esukom.de
 

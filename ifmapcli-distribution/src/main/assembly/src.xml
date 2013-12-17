@@ -54,7 +54,7 @@
 
 			<!-- Now, select which projects to include in this module-set. -->
 			<includes>
-				<include>de.fhhannover.inform.trust.visitmeta:ar-dev</include>
+				<include>de.hshannover.f4.trust.visitmeta:ar-dev</include>
 			</includes>
 		</moduleSet>
 	</moduleSets>

@@ -1,15 +1,14 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<inceptionYear>2010</inceptionYear>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 
-	<!-- general project information -->
-	<groupId>de.fhhannover.inform.trust</groupId>
+	
+	<groupId>de.hshannover.f4.trust</groupId>
 	<artifactId>ifmapcli</artifactId>
-	<version>0.0.5</version>
+	<version>0.0.6</version>
 	<packaging>pom</packaging>
 	<name>ifmapcli</name>
 	<url>http://trust.f4.hs-hannover.de</url>
@@ -17,11 +16,11 @@
 	Parent project for all IF-MAP command line tools.
 	</description>
 	<organization>
-		<name>Trust@FHH</name>
+		<name>Trust@HsH</name>
 		<url>http://trust.f4.hs-hannover.de</url>
 	</organization>
 
-	<!-- the project license -->
+	
 	<licenses>
 		<license>
 			<name>Apache 2</name>
@@ -31,19 +30,22 @@
 		</license>
 	</licenses>
 
-	<!-- the core developers of the project -->
+	
 	<developers>
-		<developer>
-			<id>aw</id>
-			<name>Arne Welzel</name>
-			<email>arne.welzel@googlemail.com</email>
-		</developer>
-		<developer>
-			<id>ib</id>
-			<name>Ingo Bente</name>
-			<email>ingo.bente@fh-hannover.de</email>
-		</developer>
-	</developers>
+        <developer>
+            <name>Trust@HsH</name>
+            <email>trust@f4-i.fh-hannover.de</email>
+        </developer>
+    </developers>
+
+    <contributors>
+        <contributor>
+            <name>Arne Welzel</name>
+        </contributor>
+        <contributor>
+            <name>Ingo Bente</name>
+        </contributor>
+    </contributors>
 
 
 	<modules>
@@ -73,16 +75,16 @@
 		<module>feature2</module>
 		<module>featureSingle</module>
 
-		<!-- the distribution module must be the last one -->
+		
 		<module>ifmapcli-distribution</module>
 	</modules>
 
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
-				<groupId>de.fhhannover.inform.trust.ifmapcli</groupId>
+				<groupId>de.hshannover.f4.trust.ifmapcli</groupId>
 				<artifactId>common</artifactId>
-				<version>0.0.5</version>
+				<version>0.0.6</version>
 			</dependency>
 			<dependency>
 				<groupId>junit</groupId>
@@ -91,9 +93,9 @@
 				<scope>test</scope>
 			</dependency>
 			<dependency>
-				<groupId>de.fhhannover.inform.trust</groupId>
+				<groupId>de.hshannover.f4.trust</groupId>
 				<artifactId>ifmapj</artifactId>
-				<version>0.1.5</version>
+				<version>1.0.0</version>
 			</dependency>
 			<dependency>
 				<groupId>commons-cli</groupId>
@@ -109,7 +111,7 @@
 			<artifactId>junit</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>de.fhhannover.inform.trust</groupId>
+			<groupId>de.hshannover.f4.trust</groupId>
 			<artifactId>ifmapj</artifactId>
 		</dependency>
 	</dependencies>
@@ -138,6 +140,7 @@
 				<version>1.4</version>
 				<configuration>
 					<licenseName>apache_v2</licenseName>
+                    <addJavaLicenseAfterPackage>false</addJavaLicenseAfterPackage>
 					<canUpdateDescription>true</canUpdateDescription>
 					<descriptionTemplate>${basedir}/src/license/description_template.ftl</descriptionTemplate>
 					<roots>
