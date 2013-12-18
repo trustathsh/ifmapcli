@@ -18,7 +18,7 @@
  * Email: trust@f4-i.fh-hannover.de
  * Website: http://trust.f4.hs-hannover.de
  * 
- * This file is part of Ifmapcli, version 0.0.6, implemented by the Trust@HsH
+ * This file is part of ifmapcli (dev-attr), version 0.0.6, implemented by the Trust@HsH
  * research group at the Hochschule Hannover.
  * %%
  * Copyright (C) 2010 - 2013 Trust@HsH
