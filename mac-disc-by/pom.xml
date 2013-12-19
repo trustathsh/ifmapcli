@@ -23,10 +23,10 @@
 							<addClasspath>true</addClasspath>
 							<classpathPrefix>./lib/</classpathPrefix>
 						</manifest>
+						<manifestEntries>
+							<Class-Path>./lib/</Class-Path>
+						</manifestEntries>
 					</archive>
-					<manifestEntries>
-						<Class-Path>./lib/</Class-Path>
-					</manifestEntries>
 				</configuration>
 			</plugin>
 			<plugin>
