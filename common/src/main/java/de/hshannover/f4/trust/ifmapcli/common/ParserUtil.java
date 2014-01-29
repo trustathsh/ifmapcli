@@ -2,6 +2,7 @@ package de.hshannover.f4.trust.ifmapcli.common;
 
 import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
+import net.sourceforge.argparse4j.inf.Namespace;
 
 public class ParserUtil {
 
@@ -64,4 +65,15 @@ public class ParserUtil {
 			.help("print logging information");
 	}
 
+	public static void printConnectionArguments(StringBuilder sb, Namespace res) {
+		sb.append(URL).append("=").append(res.getString(URL)).append(" ");	
+		sb.append(USER).append("=").append(res.getString(USER)).append(" ");	
+		sb.append(PASS).append("=").append(res.getString(PASS)).append(" ");	
+		sb.append(KEYSTORE_PATH).append("=").append(res.getString(KEYSTORE_PATH)).append(" ");	
+		sb.append(KEYSTORE_PASS).append("=").append(res.getString(KEYSTORE_PASS)).append(" ");	
+	}
+	
+	public static void printCommonArguments(StringBuilder sb, Namespace res) {
+		sb.append(VERBOSE).append("=").append(res.getBoolean(VERBOSE)).append(" ");
+	}
 }

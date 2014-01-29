@@ -110,25 +110,21 @@ public class ArDev {
 		}
 
 		if (res.getBoolean(ParserUtil.VERBOSE)) {
-			System.out.println(res);
+			StringBuilder sb = new StringBuilder();
+			
+			sb.append(CMD).append(" ");
+			sb.append(res.getString(KEY_OPERATION)).append(" ");
+			sb.append(KEY_AR).append("=").append(res.getString(KEY_AR)).append(" ");
+			sb.append(KEY_DEV).append("=").append(res.getString(KEY_DEV)).append(" ");
+			
+			ParserUtil.printConnectionArguments(sb, res);
+			System.out.println(sb.toString());
 		}
 
-//		String op, ar, dev;
-//		DefaultConfig cfg;
-//		SSRC ssrc;
 		PublishRequest req;
 		PublishUpdate publishUpdate;
 		PublishDelete publishDelete;
-//		TrustManager[] tms;
-//		Identifier arIdentifier;
-//		Identifier devIdentifier;
-//		Document metadata;
-//		InputStream is;
-//
-//		// check and load optional parameters
-//		cfg = Common.checkAndLoadParams(args, EXPECTED_ARGS);
-//		System.out.println(CMD + " uses config " + cfg);
-//
+
 		// prepare identifiers
 		Identifier arIdentifier = Identifiers.createAr(res.getString(KEY_AR));
 		Identifier devIdentifier = Identifiers.createDev(res.getString(KEY_DEV));
@@ -137,7 +133,7 @@ public class ArDev {
 		Document metadata = mf.createArDev();
 
 		// update or delete
-		if(res.getString(KEY_OPERATION).equals("update")){
+		if (res.getString(KEY_OPERATION).equals("update")) {
 			publishUpdate = Requests.createPublishUpdate(arIdentifier, devIdentifier, metadata, MetadataLifetime.forever);
 			req = Requests.createPublishReq(publishUpdate);
 		} else {
@@ -152,10 +148,10 @@ public class ArDev {
 			InputStream is = Common.prepareTruststoreIs(res.getString(ParserUtil.KEYSTORE_PATH));
 			TrustManager[] tms = IfmapJHelper.getTrustManagers(is, res.getString(ParserUtil.KEYSTORE_PASS));
 			SSRC ssrc = IfmapJ.createSSRC(
-					res.getString(ParserUtil.URL),
-					res.getString(ParserUtil.USER),
-					res.getString(ParserUtil.PASS),
-					tms);
+				res.getString(ParserUtil.URL),
+				res.getString(ParserUtil.USER),
+				res.getString(ParserUtil.PASS),
+				tms);
 			ssrc.newSession();
 			ssrc.publish(req);
 			ssrc.endSession();

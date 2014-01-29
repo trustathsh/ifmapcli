@@ -38,23 +38,24 @@
  */
 package de.hshannover.f4.trust.ifmapcli;
 
-import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.Date;
 
 import javax.net.ssl.TrustManager;
 
+import net.sourceforge.argparse4j.ArgumentParsers;
+import net.sourceforge.argparse4j.inf.ArgumentParser;
+import net.sourceforge.argparse4j.inf.ArgumentParserException;
+import net.sourceforge.argparse4j.inf.Namespace;
+
 import org.w3c.dom.Document;
 
 import de.hshannover.f4.trust.ifmapcli.common.Common;
-import de.hshannover.f4.trust.ifmapcli.common.Config;
+import de.hshannover.f4.trust.ifmapcli.common.ParserUtil;
 import de.hshannover.f4.trust.ifmapj.IfmapJ;
 import de.hshannover.f4.trust.ifmapj.IfmapJHelper;
 import de.hshannover.f4.trust.ifmapj.binding.IfmapStrings;
 import de.hshannover.f4.trust.ifmapj.channel.SSRC;
-import de.hshannover.f4.trust.ifmapj.exception.IfmapErrorResult;
-import de.hshannover.f4.trust.ifmapj.exception.IfmapException;
-import de.hshannover.f4.trust.ifmapj.exception.InitializationException;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifier;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifiers;
 import de.hshannover.f4.trust.ifmapj.messages.MetadataLifetime;
@@ -74,10 +75,6 @@ import de.hshannover.f4.trust.ifmapj.metadata.StandardIfmapMetadataFactory;
 public class IpMac {
 
 	final static String CMD = "ip-mac";
-	final static int MIN_ARGS = 3;			// update|delete, ip, mac
-	final static int EXPECTED_ARGS = 8;		// update|delete, ip, mac,
-											// url, user, pass,
-											// keystorePath, keystorePass
 
 	// in order to create the necessary objects, make use of the appropriate
 	// factory classes
@@ -88,50 +85,63 @@ public class IpMac {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		String op, ip, mac;
-		Config cfg;
-		SSRC ssrc;
+		final String KEY_OPERATION = "publishOperation";
+		final String KEY_IP = "ipAddress";
+		final String KEY_MAC = "mac";
+
+		ArgumentParser parser = ArgumentParsers.newArgumentParser(CMD);
+		parser.addArgument("publish-operation")
+			.type(String.class)
+			.dest(KEY_OPERATION)
+			.choices("update", "delete")
+			.help("the publish operation");
+		parser.addArgument("ip-address")
+			.type(String.class)
+			.dest(KEY_IP)
+			.help("value of the ip-address identifier");
+		parser.addArgument("device")
+			.type(String.class)
+			.dest(KEY_MAC)
+			.help("value of the mac identifier");
+		ParserUtil.addConnectionArgumentsTo(parser);
+		ParserUtil.addCommonArgumentsTo(parser);
+
+		Namespace res = null;
+		try {
+			res = parser.parseArgs(args);
+		} catch (ArgumentParserException e) {
+			parser.handleError(e);
+			System.exit(1);
+		}
+
+		if (res.getBoolean(ParserUtil.VERBOSE)) {
+			StringBuilder sb = new StringBuilder();
+			
+			sb.append(CMD).append(" ");
+			sb.append(res.getString(KEY_OPERATION)).append(" ");
+			sb.append(KEY_IP).append("=").append(res.getString(KEY_IP)).append(" ");
+			sb.append(KEY_MAC).append("=").append(res.getString(KEY_MAC)).append(" ");
+			
+			ParserUtil.printConnectionArguments(sb, res);
+			System.out.println(sb.toString());
+		}
+
 		PublishRequest req;
 		PublishUpdate publishUpdate;
 		PublishDelete publishDelete;
-		TrustManager[] tms;
-		Identifier ipIdentifier;
-		Identifier macIdentifier;
-		Document metadata;
-		InputStream is;
-		Date startTime, endTime;
-
-		// check number of mandatory command line arguments
-		if(args.length < 3){
-			IpMac.usage();
-			return;
-		}
-
-		// parse mandatory command line arguments
-		op = args[0];
-		ip = args[1];
-		mac = args[2];
-		if(Common.isUpdateorDelete(op) == false){
-			IpMac.usage();
-			return;
-		}
-
-		// check and load optional parameters
-		cfg = Common.checkAndLoadParams(args, EXPECTED_ARGS);
-		System.out.println(CMD + " uses config " + cfg);
 
 		// prepare identifiers
-		ipIdentifier = Identifiers.createIp4(ip);
-		macIdentifier = Identifiers.createMac(mac);
+		Identifier ipIdentifier = Identifiers.createIp4(res.getString(KEY_IP));
+		Identifier macIdentifier = Identifiers.createMac(res.getString(KEY_MAC));
 
 		// prepare metadata
-		startTime = new Date(); // now
-		endTime = new Date(startTime.getTime() + (1000*60*60*8)); // 8 hours later
-		metadata = mf.createIpMac(Common.getTimeAsXsdDateTime(startTime),
+		Date startTime = new Date(); // now
+		Date endTime = new Date(startTime.getTime() + (1000*60*60*8)); // 8 hours later
+		Document metadata = mf.createIpMac(Common.getTimeAsXsdDateTime(startTime),
 				Common.getTimeAsXsdDateTime(endTime), "ip-mac-cli");
 
 		// update or delete
-		if(Common.isUpdate(op)){
+		if (res.getString(KEY_OPERATION).equals("update")) {
 			publishUpdate = Requests.createPublishUpdate(ipIdentifier, macIdentifier,
 					metadata, MetadataLifetime.forever);
 			req = Requests.createPublishReq(publishUpdate);
@@ -143,29 +153,21 @@ public class IpMac {
 			req = Requests.createPublishReq(publishDelete);
 		}
 
-		// publish ip-mac
+		// publish
 		try {
-			is = Common.prepareTruststoreIs(cfg.getTruststorePath());
-			tms = IfmapJHelper.getTrustManagers(is, cfg.getTruststorePass());
-			ssrc = IfmapJ.createSSRC(cfg.getUrl(), cfg.getUser(), cfg.getPass(), tms);
+			InputStream is = Common.prepareTruststoreIs(res.getString(ParserUtil.KEYSTORE_PATH));
+			TrustManager[] tms = IfmapJHelper.getTrustManagers(is, res.getString(ParserUtil.KEYSTORE_PASS));
+			SSRC ssrc = IfmapJ.createSSRC(
+				res.getString(ParserUtil.URL),
+				res.getString(ParserUtil.USER),
+				res.getString(ParserUtil.PASS),
+				tms);
 			ssrc.newSession();
 			ssrc.publish(req);
 			ssrc.endSession();
-		} catch (InitializationException e) {
-			System.out.println(e.getDescription() + " " + e.getMessage());
-		} catch (IfmapErrorResult e) {
-			System.out.println(e.getErrorString());
-		} catch (IfmapException e) {
-			System.out.println(e.getDescription() + " " + e.getMessage());
-		} catch (FileNotFoundException e) {
-			System.out.println(e.getMessage());
+		} catch (Exception e) {
+			System.err.println(e.getMessage());
+			System.exit(-1);
 		}
-	}
-
-	private static void usage() {
-		System.out.println("usage:\n" +
-				"\t" + IpMac.CMD + " update|delete ip mac " +
-				"[url user pass truststore truststorePass]");
-		System.out.println(Common.USAGE);
 	}
 }

@@ -38,22 +38,23 @@
  */
 package de.hshannover.f4.trust.ifmapcli;
 
-import java.io.FileNotFoundException;
 import java.io.InputStream;
 
 import javax.net.ssl.TrustManager;
 
+import net.sourceforge.argparse4j.ArgumentParsers;
+import net.sourceforge.argparse4j.inf.ArgumentParser;
+import net.sourceforge.argparse4j.inf.ArgumentParserException;
+import net.sourceforge.argparse4j.inf.Namespace;
+
 import org.w3c.dom.Document;
 
 import de.hshannover.f4.trust.ifmapcli.common.Common;
-import de.hshannover.f4.trust.ifmapcli.common.Config;
+import de.hshannover.f4.trust.ifmapcli.common.ParserUtil;
 import de.hshannover.f4.trust.ifmapj.IfmapJ;
 import de.hshannover.f4.trust.ifmapj.IfmapJHelper;
 import de.hshannover.f4.trust.ifmapj.binding.IfmapStrings;
 import de.hshannover.f4.trust.ifmapj.channel.SSRC;
-import de.hshannover.f4.trust.ifmapj.exception.IfmapErrorResult;
-import de.hshannover.f4.trust.ifmapj.exception.IfmapException;
-import de.hshannover.f4.trust.ifmapj.exception.InitializationException;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifier;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifiers;
 import de.hshannover.f4.trust.ifmapj.identifier.IdentityType;
@@ -72,67 +73,80 @@ import de.hshannover.f4.trust.ifmapj.metadata.StandardIfmapMetadataFactory;
  *
  */
 public class Role {
+	
 	final static String CMD = "role";
-	final static int MIN_ARGS = 4;			// update|delete, ar, user, role
-	final static int EXPECTED_ARGS = 9;		// update|delete, ar, user, role
-											// url, user, pass,
-											// keystorePath, keystorePass
 
 	// in order to create the necessary objects, make use of the appropriate
 	// factory classes
 	private static StandardIfmapMetadataFactory mf = IfmapJ
 			.createStandardMetadataFactory();
 
-	/**
-	 * @param args
-	 */
 	public static void main(String[] args) {
-		String op, ar, id, role;
-		Config cfg;
-		SSRC ssrc;
+		final String KEY_OPERATION = "publishOperation";
+		final String KEY_AR = "accessRequest";
+		final String KEY_ID = "username";
+		final String KEY_ROLE = "role";
+
+		ArgumentParser parser = ArgumentParsers.newArgumentParser(CMD);
+		parser.addArgument("publish-operation")
+			.type(String.class)
+			.dest(KEY_OPERATION)
+			.choices("update", "delete")
+			.help("the publish operation");
+		parser.addArgument("access-request")
+			.type(String.class)
+			.dest(KEY_AR)
+			.help("name of the access-request identifier");
+		parser.addArgument("username")
+			.type(String.class)
+			.dest(KEY_ID)
+			.help("username value of the identity identifier");
+		parser.addArgument("role")
+			.type(String.class)
+			.dest(KEY_ROLE)
+			.help("value of the role metadatum");
+		ParserUtil.addConnectionArgumentsTo(parser);
+		ParserUtil.addCommonArgumentsTo(parser);
+
+		Namespace res = null;
+		try {
+			res = parser.parseArgs(args);
+		} catch (ArgumentParserException e) {
+			parser.handleError(e);
+			System.exit(1);
+		}
+
+		if (res.getBoolean(ParserUtil.VERBOSE)) {
+			StringBuilder sb = new StringBuilder();
+			
+			sb.append(CMD).append(" ");
+			sb.append(res.getString(KEY_OPERATION)).append(" ");
+			sb.append(KEY_AR).append("=").append(res.getString(KEY_AR)).append(" ");
+			sb.append(KEY_ID).append("=").append(res.getString(KEY_ID)).append(" ");
+			sb.append(KEY_ROLE).append("=").append(res.getString(KEY_ROLE)).append(" ");
+			
+			ParserUtil.printConnectionArguments(sb, res);
+			System.out.println(sb.toString());
+		}
+
 		PublishRequest req;
 		PublishUpdate publishUpdate;
 		PublishDelete publishDelete;
-		TrustManager[] tms;
-		Identifier arIdentifier;
-		Identifier idIdentifier;
-		Document metadata;
-		InputStream is;
-
-		// check number of mandatory command line arguments
-		if(args.length < MIN_ARGS){
-			Role.usage();
-			return;
-		}
-
-		// parse mandatory command line arguments
-		op = args[0];
-		ar = args[1];
-		id = args[2];
-		role = args[3];
-		if(Common.isUpdateorDelete(op) == false){
-			Role.usage();
-			return;
-		}
-
-		// check and load optional parameters
-		cfg = Common.checkAndLoadParams(args, EXPECTED_ARGS);
-		System.out.println(CMD + " uses config " + cfg);
 
 		// prepare identifiers
-		arIdentifier = Identifiers.createAr(ar);
-		idIdentifier = Identifiers.createIdentity(IdentityType.userName, id);
+		Identifier arIdentifier = Identifiers.createAr(res.getString(KEY_AR));
+		Identifier idIdentifier = Identifiers.createIdentity(IdentityType.userName, res.getString(KEY_ID));
 
 		// prepare metadata
-		metadata = mf.createRole(role);
+		Document metadata = mf.createRole(res.getString(KEY_ROLE));
 
 		// update or delete
-		if(Common.isUpdate(op)){
+		if (res.getString(KEY_OPERATION).equals("update")) {
 			publishUpdate = Requests.createPublishUpdate(arIdentifier, idIdentifier,
 					metadata, MetadataLifetime.forever);
 			req = Requests.createPublishReq(publishUpdate);
 		} else {
-			String filter = "meta:role[name='" + role + "']";
+			String filter = "meta:role[name='" + res.getString(KEY_ROLE) + "']";
 			publishDelete = Requests.createPublishDelete(arIdentifier, idIdentifier, filter);
 			publishDelete.addNamespaceDeclaration(IfmapStrings.STD_METADATA_PREFIX,
 					IfmapStrings.STD_METADATA_NS_URI);
@@ -141,28 +155,19 @@ public class Role {
 
 		// publish
 		try {
-			is = Common.prepareTruststoreIs(cfg.getTruststorePath());
-			tms = IfmapJHelper.getTrustManagers(is, cfg.getTruststorePass());
-			ssrc = IfmapJ.createSSRC(cfg.getUrl(), cfg.getUser(), cfg.getPass(), tms);
+			InputStream is = Common.prepareTruststoreIs(res.getString(ParserUtil.KEYSTORE_PATH));
+			TrustManager[] tms = IfmapJHelper.getTrustManagers(is, res.getString(ParserUtil.KEYSTORE_PASS));
+			SSRC ssrc = IfmapJ.createSSRC(
+				res.getString(ParserUtil.URL),
+				res.getString(ParserUtil.USER),
+				res.getString(ParserUtil.PASS),
+				tms);
 			ssrc.newSession();
 			ssrc.publish(req);
 			ssrc.endSession();
-		} catch (InitializationException e) {
-			System.out.println(e.getDescription() + " " + e.getMessage());
-		} catch (IfmapErrorResult e) {
-			System.out.println(e.getErrorString());
-		} catch (IfmapException e) {
-			System.out.println(e.getDescription() + " " + e.getMessage());
-		} catch (FileNotFoundException e) {
-			System.out.println(e.getMessage());
+		} catch (Exception e) {
+			System.err.println(e.getMessage());
+			System.exit(-1);
 		}
 	}
-
-	private static void usage() {
-		System.out.println("usage:\n" +
-				"\t" + Role.CMD + " update|delete ar username rolename " +
-				"[url user pass truststore truststorePass]");
-		System.out.println(Common.USAGE);
-	}
 }
-
