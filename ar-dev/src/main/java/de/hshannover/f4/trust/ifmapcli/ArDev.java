@@ -7,17 +7,17 @@
  *    | | | |  | |_| \__ \ |_| | (_| |  _  |\__ \|  _  |
  *    |_| |_|   \__,_|___/\__|\ \__,_|_| |_||___/|_| |_|
  *                             \____/
- * 
+ *
  * =====================================================
- * 
+ *
  * Hochschule Hannover
  * (University of Applied Sciences and Arts, Hannover)
  * Faculty IV, Dept. of Computer Science
  * Ricklinger Stadtweg 118, 30459 Hannover, Germany
- * 
+ *
  * Email: trust@f4-i.fh-hannover.de
  * Website: http://trust.f4.hs-hannover.de
- * 
+ *
  * This file is part of ifmapcli (ar-dev), version 0.0.6, implemented by the Trust@HsH
  * research group at the Hochschule Hannover.
  * %%
@@ -26,9 +26,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -38,22 +38,23 @@
  */
 package de.hshannover.f4.trust.ifmapcli;
 
-import java.io.FileNotFoundException;
 import java.io.InputStream;
 
 import javax.net.ssl.TrustManager;
 
+import net.sourceforge.argparse4j.ArgumentParsers;
+import net.sourceforge.argparse4j.inf.ArgumentParser;
+import net.sourceforge.argparse4j.inf.ArgumentParserException;
+import net.sourceforge.argparse4j.inf.Namespace;
+
 import org.w3c.dom.Document;
 
 import de.hshannover.f4.trust.ifmapcli.common.Common;
-import de.hshannover.f4.trust.ifmapcli.common.Config;
+import de.hshannover.f4.trust.ifmapcli.common.ParserUtil;
 import de.hshannover.f4.trust.ifmapj.IfmapJ;
 import de.hshannover.f4.trust.ifmapj.IfmapJHelper;
 import de.hshannover.f4.trust.ifmapj.binding.IfmapStrings;
 import de.hshannover.f4.trust.ifmapj.channel.SSRC;
-import de.hshannover.f4.trust.ifmapj.exception.IfmapErrorResult;
-import de.hshannover.f4.trust.ifmapj.exception.IfmapException;
-import de.hshannover.f4.trust.ifmapj.exception.InitializationException;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifier;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifiers;
 import de.hshannover.f4.trust.ifmapj.messages.MetadataLifetime;
@@ -71,61 +72,72 @@ import de.hshannover.f4.trust.ifmapj.metadata.StandardIfmapMetadataFactory;
  *
  */
 public class ArDev {
-	final static String CMD = "ar-dev";
-	final static int MIN_ARGS = 3;			// update|delete, ar, dev
-	final static int EXPECTED_ARGS = 8;		// update|delete, ar, dev,
-											// url, user, pass,
-											// keystorePath, keystorePass
+	public final static String CMD = "ar-dev";
 
 	// in order to create the necessary objects, make use of the appropriate
 	// factory classes
 	private static StandardIfmapMetadataFactory mf = IfmapJ
 			.createStandardMetadataFactory();
 
-	/**
-	 * @param args
-	 */
 	public static void main(String[] args) {
-		String op, ar, dev;
-		Config cfg;
-		SSRC ssrc;
+		final String KEY_OPERATION = "publishOperation";
+		final String KEY_AR = "accessRequest";
+		final String KEY_DEV = "device";
+
+		ArgumentParser parser = ArgumentParsers.newArgumentParser(CMD);
+		parser.addArgument("publish-operation")
+			.type(String.class)
+			.dest(KEY_OPERATION)
+			.choices("update", "delete")
+			.help("the publish operation");
+		parser.addArgument("access-request")
+			.type(String.class)
+			.dest(KEY_AR)
+			.help("name of the access-request identifier");
+		parser.addArgument("device")
+			.type(String.class)
+			.dest(KEY_DEV)
+			.help("name of the device identifier");
+		ParserUtil.addConnectionArgumentsTo(parser);
+		ParserUtil.addCommonArgumentsTo(parser);
+
+		Namespace res = null;
+		try {
+			res = parser.parseArgs(args);
+		} catch (ArgumentParserException e) {
+			parser.handleError(e);
+			System.exit(1);
+		}
+
+		if (res.getBoolean(ParserUtil.VERBOSE)) {
+			System.out.println(res);
+		}
+
+//		String op, ar, dev;
+//		DefaultConfig cfg;
+//		SSRC ssrc;
 		PublishRequest req;
 		PublishUpdate publishUpdate;
 		PublishDelete publishDelete;
-		TrustManager[] tms;
-		Identifier arIdentifier;
-		Identifier devIdentifier;
-		Document metadata;
-		InputStream is;
-
-		// check number of mandatory command line arguments
-		if(args.length < 3){
-			ArDev.usage();
-			return;
-		}
-
-		// parse mandatory command line arguments
-		op = args[0];
-		ar = args[1];
-		dev = args[2];
-		if(Common.isUpdateorDelete(op) == false){
-			ArDev.usage();
-			return;
-		}
-
-		// check and load optional parameters
-		cfg = Common.checkAndLoadParams(args, EXPECTED_ARGS);
-		System.out.println(CMD + " uses config " + cfg);
-
+//		TrustManager[] tms;
+//		Identifier arIdentifier;
+//		Identifier devIdentifier;
+//		Document metadata;
+//		InputStream is;
+//
+//		// check and load optional parameters
+//		cfg = Common.checkAndLoadParams(args, EXPECTED_ARGS);
+//		System.out.println(CMD + " uses config " + cfg);
+//
 		// prepare identifiers
-		arIdentifier = Identifiers.createAr(ar);
-		devIdentifier = Identifiers.createDev(dev);
+		Identifier arIdentifier = Identifiers.createAr(res.getString(KEY_AR));
+		Identifier devIdentifier = Identifiers.createDev(res.getString(KEY_DEV));
 
 		// prepare metadata
-		metadata = mf.createArDev();
+		Document metadata = mf.createArDev();
 
 		// update or delete
-		if(Common.isUpdate(op)){
+		if(res.getString(KEY_OPERATION).equals("update")){
 			publishUpdate = Requests.createPublishUpdate(arIdentifier, devIdentifier, metadata, MetadataLifetime.forever);
 			req = Requests.createPublishReq(publishUpdate);
 		} else {
@@ -137,27 +149,19 @@ public class ArDev {
 
 		// publish
 		try {
-			is = Common.prepareTruststoreIs(cfg.getTruststorePath());
-			tms = IfmapJHelper.getTrustManagers(is, cfg.getTruststorePass());
-			ssrc = IfmapJ.createSSRC(cfg.getUrl(), cfg.getUser(), cfg.getPass(), tms);
+			InputStream is = Common.prepareTruststoreIs(res.getString(ParserUtil.KEYSTORE_PATH));
+			TrustManager[] tms = IfmapJHelper.getTrustManagers(is, res.getString(ParserUtil.KEYSTORE_PASS));
+			SSRC ssrc = IfmapJ.createSSRC(
+					res.getString(ParserUtil.URL),
+					res.getString(ParserUtil.USER),
+					res.getString(ParserUtil.PASS),
+					tms);
 			ssrc.newSession();
 			ssrc.publish(req);
 			ssrc.endSession();
-		} catch (InitializationException e) {
-			System.out.println(e.getDescription() + " " + e.getMessage());
-		} catch (IfmapErrorResult e) {
-			System.out.println(e.getErrorString());
-		} catch (IfmapException e) {
-			System.out.println(e.getDescription() + " " + e.getMessage());
-		} catch (FileNotFoundException e) {
-			System.out.println(e.getMessage());
+		} catch (Exception e) {
+			System.err.println(e.getMessage());
+			System.exit(-1);
 		}
-	}
-
-	private static void usage() {
-		System.out.println("usage:\n" +
-				"\t" + ArDev.CMD + " update|delete ar dev " +
-				"[url user pass truststore truststorePass]");
-		System.out.println(Common.USAGE);
 	}
 }
