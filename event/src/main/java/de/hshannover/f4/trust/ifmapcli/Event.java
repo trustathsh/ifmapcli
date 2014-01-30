@@ -245,7 +245,7 @@ public class Event {
 					tms);
 			ssrc.newSession();
 		} catch (Exception e) {
-			System.err.println(e.getMessage());
+			e.printStackTrace();
 			System.exit(-1);
 		}
 
@@ -275,7 +275,7 @@ public class Event {
 			ssrc.publish(req);
 			ssrc.endSession();
 		} catch (Exception e) {
-			System.err.println(e.getMessage());
+			e.printStackTrace();
 			System.exit(1);
 		}
 
