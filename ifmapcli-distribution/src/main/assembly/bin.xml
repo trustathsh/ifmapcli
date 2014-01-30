@@ -23,12 +23,12 @@
 				<include>de.hshannover.f4.trust.ifmapcli:auth-by</include>
 				<include>de.hshannover.f4.trust.ifmapcli:cap</include>
 				<include>de.hshannover.f4.trust.ifmapcli:dev-attr</include>
+				<include>de.hshannover.f4.trust.ifmapcli:dev-char</include>
 				<include>de.hshannover.f4.trust.ifmapcli:dev-ip</include>
-				<include>de.hshannover.f4.trust.ifmapcli:ip-disc-by</include>
+				<include>de.hshannover.f4.trust.ifmapcli:disc-by</include>
 				<include>de.hshannover.f4.trust.ifmapcli:ip-mac</include>
 				<include>de.hshannover.f4.trust.ifmapcli:layer2-info</include>
 				<include>de.hshannover.f4.trust.ifmapcli:req-inv</include>
-				<include>de.hshannover.f4.trust.ifmapcli:mac-disc-by</include>
 				<include>de.hshannover.f4.trust.ifmapcli:pdp</include>
 				<include>de.hshannover.f4.trust.ifmapcli:purge</include>
 				<include>de.hshannover.f4.trust.ifmapcli:role</include>

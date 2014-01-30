@@ -76,4 +76,18 @@ public class ParserUtil {
 	public static void printCommonArguments(StringBuilder sb, Namespace res) {
 		sb.append(VERBOSE).append("=").append(res.getBoolean(VERBOSE)).append(" ");
 	}
+	
+	public static void appendIntegerIfNotNull(StringBuilder sb, Namespace res,
+			String key) {
+		if (res.getInt(key) != null) {
+			sb.append(key).append("=").append(res.getInt(key)).append(" ");
+		}
+	}
+
+	public static void appendStringIfNotNull(StringBuilder sb, Namespace res,
+			String key) {
+		if (res.getString(key) != null) {
+			sb.append(key).append("=").append(res.getString(key)).append(" ");
+		}
+	}
 }

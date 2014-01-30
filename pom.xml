@@ -59,9 +59,8 @@
 		<module>dev-attr</module>
 		<module>dev-char</module>
 		<module>dev-ip</module>
-		<module>ip-disc-by</module>
+		<module>disc-by</module>
 		<module>ip-mac</module>
-		<module>mac-disc-by</module>
 		<module>layer2-info</module>
 		<module>role</module>
 		<module>purge</module>
@@ -74,7 +73,6 @@
 		<module>feature</module>
 		<module>feature2</module>
 		<module>featureSingle</module>
-
 		
 		<module>ifmapcli-distribution</module>
 	</modules>
