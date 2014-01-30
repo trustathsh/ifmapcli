@@ -7,17 +7,17 @@
  *    | | | |  | |_| \__ \ |_| | (_| |  _  |\__ \|  _  |
  *    |_| |_|   \__,_|___/\__|\ \__,_|_| |_||___/|_| |_|
  *                             \____/
- * 
+ *
  * =====================================================
- * 
+ *
  * Hochschule Hannover
  * (University of Applied Sciences and Arts, Hannover)
  * Faculty IV, Dept. of Computer Science
  * Ricklinger Stadtweg 118, 30459 Hannover, Germany
- * 
+ *
  * Email: trust@f4-i.fh-hannover.de
  * Website: http://trust.f4.hs-hannover.de
- * 
+ *
  * This file is part of ifmapcli (event), version 0.0.6, implemented by the Trust@HsH
  * research group at the Hochschule Hannover.
  * %%
@@ -26,9 +26,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -38,35 +38,34 @@
  */
 package de.hshannover.f4.trust.ifmapcli;
 
-import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.util.Date;
 
 import javax.net.ssl.TrustManager;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.GnuParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.OptionBuilder;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
+import net.sourceforge.argparse4j.ArgumentParsers;
+import net.sourceforge.argparse4j.impl.Arguments;
+import net.sourceforge.argparse4j.inf.ArgumentParser;
+import net.sourceforge.argparse4j.inf.ArgumentParserException;
+import net.sourceforge.argparse4j.inf.Namespace;
+
 import org.w3c.dom.Document;
 
 import de.hshannover.f4.trust.ifmapcli.common.Common;
-import de.hshannover.f4.trust.ifmapcli.common.Config;
-import de.hshannover.f4.trust.ifmapcli.common.IdentifierEnum;
+import de.hshannover.f4.trust.ifmapcli.common.ParserUtil;
 import de.hshannover.f4.trust.ifmapj.IfmapJ;
 import de.hshannover.f4.trust.ifmapj.IfmapJHelper;
+import de.hshannover.f4.trust.ifmapj.binding.IfmapStrings;
 import de.hshannover.f4.trust.ifmapj.channel.SSRC;
-import de.hshannover.f4.trust.ifmapj.exception.IfmapErrorResult;
-import de.hshannover.f4.trust.ifmapj.exception.IfmapException;
-import de.hshannover.f4.trust.ifmapj.exception.InitializationException;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifier;
+import de.hshannover.f4.trust.ifmapj.identifier.Identifiers;
+import de.hshannover.f4.trust.ifmapj.identifier.IdentityType;
+import de.hshannover.f4.trust.ifmapj.messages.MetadataLifetime;
+import de.hshannover.f4.trust.ifmapj.messages.PublishDelete;
 import de.hshannover.f4.trust.ifmapj.messages.PublishNotify;
 import de.hshannover.f4.trust.ifmapj.messages.PublishRequest;
+import de.hshannover.f4.trust.ifmapj.messages.PublishUpdate;
 import de.hshannover.f4.trust.ifmapj.messages.Requests;
-import de.hshannover.f4.trust.ifmapj.metadata.EventType;
 import de.hshannover.f4.trust.ifmapj.metadata.Significance;
 import de.hshannover.f4.trust.ifmapj.metadata.StandardIfmapMetadataFactory;
 
@@ -81,162 +80,247 @@ import de.hshannover.f4.trust.ifmapj.metadata.StandardIfmapMetadataFactory;
  *
  */
 public class Event {
-	final static String CMD = "event";
 
-	private StandardIfmapMetadataFactory mMetaFac = IfmapJ.createStandardMetadataFactory();
-	private SSRC mSsrc;
-	private Document mEvent;
-	PublishNotify mPubNotify;
-
-	// CLI options parser stuff ( not the actual input params )
-	Options mOptions;
-	Option mIdentifier;
-	Option mValue;
-	Option mName;
-	Option mHelp;
-
-	// parsed command line options
-	CommandLine mCmdLine;
-
-	// configuration
-	Config mConfig;
-
-	/**
-	 *
-	 * @param args
-	 * @throws FileNotFoundException
-	 * @throws InitializationException
-	 */
-	public Event(String[] args) throws FileNotFoundException,
-			InitializationException {
-		mConfig = Common.loadEnvParams();
-		parseCommandLine(args);
-		preparePublishRequest();
-		initSsrc();
+	enum IdType {
+		ipv4, ipv6, mac, dev, ar, id
 	}
 
-	/**
-	 * Create session, start search, parse results, end session
-	 *
-	 * @throws IfmapErrorResult
-	 * @throws IfmapException
-	 */
-	public void start() throws IfmapErrorResult, IfmapException {
-		mSsrc.newSession();
-		mSsrc.publish(Requests.createPublishReq(mPubNotify));
-		mSsrc.endSession();
+	enum EventType {
+		p2p,
+		cve,
+		botnet_infection,
+		worm_infection,
+		excessive_flows,
+		behavioral_change,
+		policy_violation,
+		other
 	}
 
-	/**
-	 * create {@link PublishRequest} object
-	 */
-	private void preparePublishRequest() {
-		// create identifier depending on arguments
-		Identifier identifier = null;
-		IdentifierEnum type = IdentifierEnum.valueOf(mCmdLine
-				.getOptionValue(mIdentifier.getOpt()));
-		String value = mCmdLine.getOptionValue(mValue.getOpt());
-		identifier = type.getIdentifier(value);
+	public final static String CMD = "event";
 
-		// create event
-		String eventName = mCmdLine.getOptionValue(mName.getOpt());
-		mEvent  = mMetaFac.createEvent(eventName, "2011-08-19T09:09:21Z", "discId", new Integer(59), new Integer(50), Significance.important, EventType.policyViolation, null, "info", "http://www.example.org");
+	private static StandardIfmapMetadataFactory mMetaFac =
+			IfmapJ.createStandardMetadataFactory();
 
-		mPubNotify = Requests.createPublishNotify(identifier, mEvent);
+	public static void main(String[] args) {
+		final String KEY_OPERATION = "publishOperation";
+		final String KEY_IDENTIFIER = "identifier";
+		final String KEY_IDENTIFIER_TYPE = "identifierType";
+		final String KEY_NAME = "name";
 
-	}
+		// TODO add discovered-time
+//		final String KEY_DISCOVERED_TIME = "discovered-time";
+		final String KEY_DISCOVERER_ID = "discoverer-id";
+		final String KEY_MAGNITUDE = "magnitude";
+		final String KEY_CONFIDENCE = "confidence";
+		final String KEY_SIGNIFICANCE = "significance";
+		final String KEY_TYPE = "type";
+		final String KEY_OTHERTYPE_DEFINITION = "other-type-definition";
+		final String KEY_INFORMATION = "information";
+		final String KEY_VULNERABILITY_URI = "vulnerability-uri";
 
-	/**
-	 * parse the command line by using Apache commons-cli
-	 *
-	 * @param args
-	 */
-	private void parseCommandLine(String[] args) {
-		mOptions = new Options();
-		// automatically generate the help statement
-		HelpFormatter formatter = new HelpFormatter();
-		formatter.setWidth(100);
+		ArgumentParser parser = ArgumentParsers.newArgumentParser(CMD);
+		parser.addArgument("publish-operation")
+			.type(String.class)
+			.dest(KEY_OPERATION)
+			.choices("update", "delete", "notify")
+			.help("the publish operation");
+		parser.addArgument("identifier-type")
+			.type(IdType.class)
+			.dest(KEY_IDENTIFIER_TYPE)
+			.choices(
+				IdType.ipv4,
+				IdType.ipv6,
+				IdType.mac,
+				IdType.dev,
+				IdType.ar,
+				IdType.id)
+			.help("the type of the identifier");
+		parser.addArgument("identifier")
+			.type(String.class)
+			.dest(KEY_IDENTIFIER)
+			.help("the identifier");
+		// event content
+		parser.addArgument("name")
+			.type(String.class)
+			.dest(KEY_NAME)
+			.help("the name of the event");
 
-		// boolean options
-		mHelp = new Option("h", "help", false, "print this message");
-		mOptions.addOption(mHelp);
+		// TODO add discovered-time
+//		parser.addArgument(KEY_DISCOVERED_TIME)
+//			.type(String.class)
+//			.dest(KEY_DISCOVERED_TIME)
+//			.setDefault(new Date())
+//			.help("detection time of the event, default is now");
+		parser.addArgument("--discoverer-id")
+			.type(String.class)
+			.dest(KEY_DISCOVERER_ID)
+			.setDefault("ifmapj")
+			.help("the discoverer-id of the event, default is 'ifmapj'");
+		parser.addArgument("--magnitude")
+			.type(Integer.class)
+			.dest(KEY_MAGNITUDE)
+			.setDefault(0)
+			.choices(Arguments.range(0, 100))
+			.help("the magnitude of the event, default is 0");
+		parser.addArgument("--confidence")
+			.type(Integer.class)
+			.dest(KEY_CONFIDENCE)
+			.setDefault(0)
+			.choices(Arguments.range(0, 100))
+			.help("the confidence for the event, default is 0");
+		parser.addArgument("--significance")
+			.type(Significance.class)
+			.setDefault(Significance.informational)
+			.choices(
+				Significance.critical,
+				Significance.important,
+				Significance.informational)
+			.dest(KEY_SIGNIFICANCE)
+			.help("the significance of the event, default is 'informational'");
+		parser.addArgument("--type")
+			.type(EventType.class)
+			.choices(
+				EventType.p2p,
+				EventType.cve,
+				EventType.botnet_infection,
+				EventType.worm_infection,
+				EventType.excessive_flows,
+				EventType.behavioral_change,
+				EventType.policy_violation,
+				EventType.other)
+			.dest(KEY_TYPE)
+			.setDefault(EventType.other)
+			.help("the type of the event, default is 'other'");
+		parser.addArgument("--other-type-def")
+			.type(String.class)
+			.dest(KEY_OTHERTYPE_DEFINITION)
+			.help("other-type-definition of the event");
+		parser.addArgument("--information")
+			.type(String.class)
+			.dest(KEY_INFORMATION)
+			.help("\"human consumable\" informational string");
+		parser.addArgument("--vulnerability-uri")
+			.type(String.class)
+			.dest(KEY_VULNERABILITY_URI)
+			.help("URI of the CVE if type cve is used");
+		ParserUtil.addConnectionArgumentsTo(parser);
+		ParserUtil.addCommonArgumentsTo(parser);
 
-		// argument options
-		// identifier
-		OptionBuilder.hasArg();
-		OptionBuilder.isRequired();
-		OptionBuilder.withArgName("type");
-		OptionBuilder.withDescription("abbreviated type of start identifier, "
-				+ IdentifierEnum.ip + " | " + IdentifierEnum.mac + " | "
-				+ IdentifierEnum.ar + " | " + IdentifierEnum.id + " | "
-				+ IdentifierEnum.dev);
-//		OptionBuilder.withLongOpt("identifier");
-		OptionBuilder.withType(IdentifierEnum.class);
-		mIdentifier = OptionBuilder.create("i");
-		mOptions.addOption(mIdentifier);
-
-		// value
-		OptionBuilder.hasArg();
-		OptionBuilder.isRequired();
-		OptionBuilder.withArgName("value");
-		OptionBuilder.withDescription("value of identifier");
-		mValue = OptionBuilder.create("v");
-		mOptions.addOption(mValue);
-
-		// name
-		OptionBuilder.hasArg();
-		OptionBuilder.isRequired();
-		OptionBuilder.withArgName("name");
-		OptionBuilder.withDescription("name of event");
-		mName = OptionBuilder.create("n");
-		mOptions.addOption(mName);
-
-		// create the parser
-		CommandLineParser parser = new GnuParser();
+		Namespace res = null;
 		try {
-			// parse the command line arguments
-			mCmdLine = parser.parse(mOptions, args);
-		} catch (ParseException exp) {
-			// oops, something went wrong
-			System.err.println("Parsing failed.  Reason: " + exp.getMessage());
-			formatter.printHelp(
-					Event.CMD + " -i <type> -v <value> [OPTION]...", mOptions);
-			System.out.println(Common.USAGE);
+			res = parser.parseArgs(args);
+		} catch (ArgumentParserException e) {
+			parser.handleError(e);
 			System.exit(1);
+		}
+
+		IdType identifierType = res.get(KEY_IDENTIFIER_TYPE);
+		String identifierName = res.getString(KEY_IDENTIFIER);
+		Identifier identifier = getIdentifier(identifierType, identifierName);
+
+		EventType eventType = res.get(KEY_TYPE);
+		Significance eventSignificance = res.get(KEY_SIGNIFICANCE);
+		Document event = mMetaFac.createEvent(
+			res.getString(KEY_NAME),
+			Common.getTimeAsXsdDateTime(new Date()), // TODO add discovered-time to argument parser
+			res.getString(KEY_DISCOVERER_ID),
+			res.getInt(KEY_MAGNITUDE),
+			res.getInt(KEY_CONFIDENCE),
+			eventSignificance,
+			ifmapjEventTypeFrom(eventType),
+			res.getString(KEY_OTHERTYPE_DEFINITION),
+			res.getString(KEY_INFORMATION),
+			res.getString(KEY_VULNERABILITY_URI)
+		);
+
+
+		SSRC ssrc = null;
+		try {
+			InputStream is = Common.prepareTruststoreIs(res.getString(ParserUtil.KEYSTORE_PATH));
+			TrustManager[] tms = IfmapJHelper.getTrustManagers(is, res.getString(ParserUtil.KEYSTORE_PASS));
+			ssrc = IfmapJ.createSSRC(
+					res.getString(ParserUtil.URL),
+					res.getString(ParserUtil.USER),
+					res.getString(ParserUtil.PASS),
+					tms);
+			ssrc.newSession();
+		} catch (Exception e) {
+			System.err.println(e.getMessage());
+			System.exit(-1);
+		}
+
+		PublishRequest req = Requests.createPublishReq();
+
+		if (res.getString(KEY_OPERATION).equals("update")) {
+			PublishUpdate publishUpdate = Requests.createPublishUpdate(
+				identifier, event, MetadataLifetime.forever);
+			req.addPublishElement(publishUpdate);
+		} else if (res.getString(KEY_OPERATION).equals("notify")) {
+			PublishNotify publishNotify = Requests.createPublishNotify(
+					identifier, event);
+				req.addPublishElement(publishNotify);
+		} else if (res.getString(KEY_OPERATION).equals("delete")) {
+			// TODO expand filter string to all event attributes
+			String filter = String.format(
+				"meta:event[@ifmap-publisher-id='%s' and name='%s']",
+				ssrc.getPublisherId(), res.getString(KEY_NAME));
+
+			PublishDelete publishDelete = Requests.createPublishDelete(
+				identifier, filter);
+			publishDelete.addNamespaceDeclaration("meta", IfmapStrings.STD_METADATA_NS_URI);
+			req.addPublishElement(publishDelete);
+		}
+
+		try {
+			ssrc.publish(req);
+			ssrc.endSession();
+		} catch (Exception e) {
+			System.err.println(e.getMessage());
+			System.exit(1);
+		}
+
+	}
+
+	private static Identifier getIdentifier(IdType type, String name) {
+		switch (type) {
+		case ipv4:
+			return Identifiers.createIp4(name);
+		case ipv6:
+			return Identifiers.createIp6(name);
+		case id:
+			// TODO add optinal parameter for the identity identifier type
+			return Identifiers.createIdentity(IdentityType.other, name);
+		case mac:
+			return Identifiers.createMac(name);
+		case dev:
+			return Identifiers.createDev(name);
+		case ar:
+			return Identifiers.createAr(name);
+		default:
+			throw new RuntimeException("unknown identifier type '" + type + "'");
 		}
 	}
 
-	/**
-	 * Load {@link TrustManager} instances and create {@link SSRC}.
-	 *
-	 * @throws FileNotFoundException
-	 * @throws InitializationException
-	 */
-	private void initSsrc() throws FileNotFoundException,
-			InitializationException {
-		InputStream is = Common
-				.prepareTruststoreIs(mConfig.getTruststorePath());
-		TrustManager[] tms = IfmapJHelper.getTrustManagers(is,
-				mConfig.getTruststorePass());
-		mSsrc = IfmapJ.createSSRC(mConfig.getUrl(), mConfig.getUser(),
-				mConfig.getPass(), tms);
-	}
-
-	/**
-	 * @param args
-	 */
-	public static void main(String[] args) {
-		try {
-			Event e = new Event(args);
-			e.start();
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (InitializationException e) {
-			e.printStackTrace();
-		} catch (IfmapErrorResult e) {
-			e.printStackTrace();
-		} catch (IfmapException e) {
-			e.printStackTrace();
+	private static de.hshannover.f4.trust.ifmapj.metadata.EventType ifmapjEventTypeFrom(EventType type) {
+		switch (type) {
+		case p2p:
+			return de.hshannover.f4.trust.ifmapj.metadata.EventType.p2p;
+		case cve:
+			return de.hshannover.f4.trust.ifmapj.metadata.EventType.cve;
+		case botnet_infection:
+			return de.hshannover.f4.trust.ifmapj.metadata.EventType.botnetInfection;
+		case worm_infection:
+			return de.hshannover.f4.trust.ifmapj.metadata.EventType.wormInfection;
+		case excessive_flows:
+			return de.hshannover.f4.trust.ifmapj.metadata.EventType.excessiveFlows;
+		case behavioral_change:
+			return de.hshannover.f4.trust.ifmapj.metadata.EventType.behavioralChange;
+		case policy_violation:
+			return de.hshannover.f4.trust.ifmapj.metadata.EventType.policyViolation;
+		case other:
+			return de.hshannover.f4.trust.ifmapj.metadata.EventType.other;
+		default:
+			throw new RuntimeException("unknown event type '" + type + "'");
 		}
 	}
 
