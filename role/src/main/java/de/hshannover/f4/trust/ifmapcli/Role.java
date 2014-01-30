@@ -86,6 +86,7 @@ public class Role {
 		final String KEY_AR = "accessRequest";
 		final String KEY_ID = "username";
 		final String KEY_ROLE = "role";
+		final String KEY_ADMINISTRATIVE_DOMAIN = "administrative-domain";
 
 		ArgumentParser parser = ArgumentParsers.newArgumentParser(CMD);
 		parser.addArgument("publish-operation")
@@ -105,6 +106,10 @@ public class Role {
 			.type(String.class)
 			.dest(KEY_ROLE)
 			.help("value of the role metadatum");
+		parser.addArgument("--administrative-domain")
+			.type(String.class)
+			.dest(KEY_ADMINISTRATIVE_DOMAIN)
+			.help("value of the administrative domain");
 		ParserUtil.addConnectionArgumentsTo(parser);
 		ParserUtil.addCommonArgumentsTo(parser);
 
@@ -124,6 +129,7 @@ public class Role {
 			sb.append(KEY_AR).append("=").append(res.getString(KEY_AR)).append(" ");
 			sb.append(KEY_ID).append("=").append(res.getString(KEY_ID)).append(" ");
 			sb.append(KEY_ROLE).append("=").append(res.getString(KEY_ROLE)).append(" ");
+			ParserUtil.appendStringIfNotNull(sb, res, KEY_ADMINISTRATIVE_DOMAIN);
 			
 			ParserUtil.printConnectionArguments(sb, res);
 			System.out.println(sb.toString());
@@ -137,8 +143,13 @@ public class Role {
 		Identifier arIdentifier = Identifiers.createAr(res.getString(KEY_AR));
 		Identifier idIdentifier = Identifiers.createIdentity(IdentityType.userName, res.getString(KEY_ID));
 
+		Document metadata = null;
 		// prepare metadata
-		Document metadata = mf.createRole(res.getString(KEY_ROLE));
+		if (res.getString(KEY_ADMINISTRATIVE_DOMAIN) != null) {
+			metadata = mf.createRole(res.getString(KEY_ROLE), res.getString(KEY_ADMINISTRATIVE_DOMAIN));			
+		} else {			
+			metadata = mf.createRole(res.getString(KEY_ROLE));
+		}
 
 		// update or delete
 		if (res.getString(KEY_OPERATION).equals("update")) {
@@ -166,7 +177,7 @@ public class Role {
 			ssrc.publish(req);
 			ssrc.endSession();
 		} catch (Exception e) {
-			System.err.println(e.getMessage());
+			e.printStackTrace();
 			System.exit(-1);
 		}
 	}

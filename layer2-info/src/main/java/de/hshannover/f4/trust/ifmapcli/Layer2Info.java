@@ -38,22 +38,23 @@
  */
 package de.hshannover.f4.trust.ifmapcli;
 
-import java.io.FileNotFoundException;
 import java.io.InputStream;
 
 import javax.net.ssl.TrustManager;
 
+import net.sourceforge.argparse4j.ArgumentParsers;
+import net.sourceforge.argparse4j.inf.ArgumentParser;
+import net.sourceforge.argparse4j.inf.ArgumentParserException;
+import net.sourceforge.argparse4j.inf.Namespace;
+
 import org.w3c.dom.Document;
 
 import de.hshannover.f4.trust.ifmapcli.common.Common;
-import de.hshannover.f4.trust.ifmapcli.common.Config;
+import de.hshannover.f4.trust.ifmapcli.common.ParserUtil;
 import de.hshannover.f4.trust.ifmapj.IfmapJ;
 import de.hshannover.f4.trust.ifmapj.IfmapJHelper;
 import de.hshannover.f4.trust.ifmapj.binding.IfmapStrings;
 import de.hshannover.f4.trust.ifmapj.channel.SSRC;
-import de.hshannover.f4.trust.ifmapj.exception.IfmapErrorResult;
-import de.hshannover.f4.trust.ifmapj.exception.IfmapException;
-import de.hshannover.f4.trust.ifmapj.exception.InitializationException;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifier;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifiers;
 import de.hshannover.f4.trust.ifmapj.messages.MetadataLifetime;
@@ -73,70 +74,112 @@ import de.hshannover.f4.trust.ifmapj.metadata.StandardIfmapMetadataFactory;
  */
 public class Layer2Info {
 	final static String CMD = "layer2-info";
-	final static int MIN_ARGS = 6;			// update|delete, ar, dev, vlan, name, port
-	final static int EXPECTED_ARGS = 11;	// update|delete, ar, dev, vlan, name, port
-											// url, user, pass,
-											// keystorePath, keystorePass
 
 	// in order to create the necessary objects, make use of the appropriate
 	// factory classes
 	private static StandardIfmapMetadataFactory mf = IfmapJ
 			.createStandardMetadataFactory();
 
-	/**
-	 * @param args
-	 */
 	public static void main(String[] args) {
-		String op, ar, dev, vlan, name, port;
-		Config cfg;
-		SSRC ssrc;
+		final String KEY_OPERATION = "publishOperation";
+		final String KEY_AR = "accessRequest";
+		final String KEY_DEV = "device";
+		final String KEY_VLAN_NUMBER = "vlan-number";
+		final String KEY_VLAN_NAME = "vlan-name";
+		final String KEY_PORT = "port";
+		final String KEY_ADMINISTRATIVE_DOMAIN ="administrative-domain";
+
+		ArgumentParser parser = ArgumentParsers.newArgumentParser(CMD);
+		parser.addArgument("publish-operation")
+			.type(String.class)
+			.dest(KEY_OPERATION)
+			.choices("update", "delete")
+			.help("the publish operation");
+		parser.addArgument("access-request")
+			.type(String.class)
+			.dest(KEY_AR)
+			.help("name of the access-request identifier");
+		parser.addArgument("device")
+			.type(String.class)
+			.dest(KEY_DEV)
+			.help("name of the device identifier");
+		parser.addArgument("--vlan-number")
+			.type(Integer.class)
+			.dest(KEY_VLAN_NUMBER)
+			.help("vlan number");
+		parser.addArgument("--vlan-name")
+			.type(String.class)
+			.dest(KEY_VLAN_NAME)
+			.help("vlan name");
+		parser.addArgument("--port")
+			.type(Integer.class)
+			.dest(KEY_PORT)
+			.help("port");
+		parser.addArgument("--administrative-domain")
+			.type(String.class)
+			.dest(KEY_ADMINISTRATIVE_DOMAIN)
+			.help("value of the administrative domain");
+		ParserUtil.addConnectionArgumentsTo(parser);
+		ParserUtil.addCommonArgumentsTo(parser);
+
+		Namespace res = null;
+		try {
+			res = parser.parseArgs(args);
+		} catch (ArgumentParserException e) {
+			parser.handleError(e);
+			System.exit(1);
+		}
+
+		if (res.getBoolean(ParserUtil.VERBOSE)) {
+			StringBuilder sb = new StringBuilder();
+			
+			sb.append(CMD).append(" ");
+			sb.append(res.getString(KEY_OPERATION)).append(" ");
+			sb.append(KEY_AR).append("=").append(res.getString(KEY_AR)).append(" ");
+			sb.append(KEY_DEV).append("=").append(res.getString(KEY_DEV)).append(" ");
+			ParserUtil.appendIntegerIfNotNull(sb, res, KEY_VLAN_NUMBER);
+			ParserUtil.appendStringIfNotNull(sb, res, KEY_VLAN_NAME);
+			ParserUtil.appendIntegerIfNotNull(sb, res, KEY_PORT);
+			ParserUtil.appendStringIfNotNull(sb, res, KEY_ADMINISTRATIVE_DOMAIN);
+			
+			ParserUtil.printConnectionArguments(sb, res);
+			System.out.println(sb.toString());
+		}
+
 		PublishRequest req;
 		PublishUpdate publishUpdate;
 		PublishDelete publishDelete;
-		TrustManager[] tms;
-		Identifier arIdentifier;
-		Identifier devIdentifier;
-		Document metadata;
-		InputStream is;
-
-		// check number of mandatory command line arguments
-		if(args.length < MIN_ARGS){
-			Layer2Info.usage();
-			return;
-		}
-
-		// parse mandatory command line arguments
-		op = args[0];
-		ar = args[1];
-		dev = args[2];
-		vlan = args[3];
-		name = args[4];
-		port = args[5];
-		if(Common.isUpdateorDelete(op) == false){
-			Layer2Info.usage();
-			return;
-		}
-
-		// check and load optional parameters
-		cfg = Common.checkAndLoadParams(args, EXPECTED_ARGS);
-		System.out.println(CMD + " uses config " + cfg);
-
+		
 		// prepare identifiers
-		arIdentifier = Identifiers.createAr(ar);
-		devIdentifier = Identifiers.createDev(dev);
+		Identifier arIdentifier = Identifiers.createAr(res.getString(KEY_AR));
+		Identifier devIdentifier = Identifiers.createDev(res.getString(KEY_DEV));
 
+		Document metadata = null;
 		// prepare metadata
-		metadata = mf.createLayer2Information(Integer.valueOf(vlan), name, Integer.valueOf(port), null);
+		if (res.getString(KEY_ADMINISTRATIVE_DOMAIN) != null) {			
+			metadata = mf.createLayer2Information(
+					res.getInt(KEY_VLAN_NUMBER),
+					res.getString(KEY_VLAN_NAME),
+					res.getInt(KEY_PORT),
+					res.getString(KEY_ADMINISTRATIVE_DOMAIN));
+		} else {
+			metadata = mf.createLayer2Information(
+					res.getInt(KEY_VLAN_NUMBER),
+					res.getString(KEY_VLAN_NAME),
+					res.getInt(KEY_PORT),
+					null);
+		}
 
 		// update or delete
-		if(Common.isUpdate(op)){
+		if (res.getString(KEY_OPERATION).equals("update")) {
 			publishUpdate = Requests.createPublishUpdate(arIdentifier, devIdentifier,
 					metadata, MetadataLifetime.forever);
 			req = Requests.createPublishReq(publishUpdate);
 		} else {
-			String filter = "meta:layer2-information[vlan=" + vlan + " " +
-													"and vlan-name='" + name + "' " +
-													"and port=" + port +
+			// TODO check if values for VLAN_NUMBER, VLAN_NAME and PORT are available
+			String filter = "meta:layer2-information[vlan=" + res.getInt(KEY_VLAN_NUMBER) + " " +
+													"and vlan-name='" + res.getString(KEY_VLAN_NAME) + "' " +
+													"and port=" + res.getString(KEY_PORT) +
 													"]";
 			System.out.println(filter);
 			publishDelete = Requests.createPublishDelete(arIdentifier, devIdentifier, filter);
@@ -147,27 +190,19 @@ public class Layer2Info {
 
 		// publish
 		try {
-			is = Common.prepareTruststoreIs(cfg.getTruststorePath());
-			tms = IfmapJHelper.getTrustManagers(is, cfg.getTruststorePass());
-			ssrc = IfmapJ.createSSRC(cfg.getUrl(), cfg.getUser(), cfg.getPass(), tms);
+			InputStream is = Common.prepareTruststoreIs(res.getString(ParserUtil.KEYSTORE_PATH));
+			TrustManager[] tms = IfmapJHelper.getTrustManagers(is, res.getString(ParserUtil.KEYSTORE_PASS));
+			SSRC ssrc = IfmapJ.createSSRC(
+				res.getString(ParserUtil.URL),
+				res.getString(ParserUtil.USER),
+				res.getString(ParserUtil.PASS),
+				tms);
 			ssrc.newSession();
 			ssrc.publish(req);
 			ssrc.endSession();
-		} catch (InitializationException e) {
-			System.out.println(e.getDescription() + " " + e.getMessage());
-		} catch (IfmapErrorResult e) {
-			System.out.println(e.getErrorString());
-		} catch (IfmapException e) {
-			System.out.println(e.getDescription() + " " + e.getMessage());
-		} catch (FileNotFoundException e) {
-			System.out.println(e.getMessage());
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.exit(-1);
 		}
-	}
-
-	private static void usage() {
-		System.out.println("usage:\n" +
-				"\t" + Layer2Info.CMD + " update|delete ar dev vlan name port " +
-				"[url user pass truststore truststorePass]");
-		System.out.println(Common.USAGE);
 	}
 }

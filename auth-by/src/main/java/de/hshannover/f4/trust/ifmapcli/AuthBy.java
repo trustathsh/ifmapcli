@@ -158,7 +158,7 @@ public class AuthBy {
 			ssrc.publish(req);
 			ssrc.endSession();
 		} catch (Exception e) {
-			System.err.println(e.getMessage());
+			e.printStackTrace();
 			System.exit(-1);
 		}
 	}

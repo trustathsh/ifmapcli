@@ -159,7 +159,7 @@ public class AuthAs {
 			ssrc.publish(req);
 			ssrc.endSession();
 		} catch (Exception e) {
-			System.err.println(e.getMessage());
+			e.printStackTrace();
 			System.exit(-1);
 		}
 	}

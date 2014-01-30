@@ -89,6 +89,7 @@ public class IpMac {
 		final String KEY_IP = "ipAddress";
 		final String KEY_MAC = "mac";
 
+		// TODO choice for IPv4 and IPv6
 		ArgumentParser parser = ArgumentParsers.newArgumentParser(CMD);
 		parser.addArgument("publish-operation")
 			.type(String.class)
@@ -103,6 +104,7 @@ public class IpMac {
 			.type(String.class)
 			.dest(KEY_MAC)
 			.help("value of the mac identifier");
+		// TODO start-time, end-time and dhcp-server name
 		ParserUtil.addConnectionArgumentsTo(parser);
 		ParserUtil.addCommonArgumentsTo(parser);
 
@@ -135,6 +137,7 @@ public class IpMac {
 		Identifier macIdentifier = Identifiers.createMac(res.getString(KEY_MAC));
 
 		// prepare metadata
+		// TODO start-time, end-time and dhcp-server name from Parser
 		Date startTime = new Date(); // now
 		Date endTime = new Date(startTime.getTime() + (1000*60*60*8)); // 8 hours later
 		Document metadata = mf.createIpMac(Common.getTimeAsXsdDateTime(startTime),
@@ -166,7 +169,7 @@ public class IpMac {
 			ssrc.publish(req);
 			ssrc.endSession();
 		} catch (Exception e) {
-			System.err.println(e.getMessage());
+			e.printStackTrace();
 			System.exit(-1);
 		}
 	}
