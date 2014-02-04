@@ -38,34 +38,28 @@
  */
 package de.hshannover.f4.trust.ifmapcli;
 
-import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.Collection;
 
 import javax.net.ssl.TrustManager;
 import javax.xml.transform.TransformerException;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.GnuParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.OptionBuilder;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
+import net.sourceforge.argparse4j.ArgumentParsers;
+import net.sourceforge.argparse4j.inf.ArgumentParser;
+import net.sourceforge.argparse4j.inf.ArgumentParserException;
+import net.sourceforge.argparse4j.inf.Namespace;
+
 import org.w3c.dom.Document;
 
 import de.hshannover.f4.trust.ifmapcli.common.Common;
-import de.hshannover.f4.trust.ifmapcli.common.Config;
-import de.hshannover.f4.trust.ifmapcli.common.IdentifierEnum;
+import de.hshannover.f4.trust.ifmapcli.common.ParserUtil;
 import de.hshannover.f4.trust.ifmapj.IfmapJ;
 import de.hshannover.f4.trust.ifmapj.IfmapJHelper;
 import de.hshannover.f4.trust.ifmapj.binding.IfmapStrings;
 import de.hshannover.f4.trust.ifmapj.channel.SSRC;
-import de.hshannover.f4.trust.ifmapj.exception.IfmapErrorResult;
-import de.hshannover.f4.trust.ifmapj.exception.IfmapException;
-import de.hshannover.f4.trust.ifmapj.exception.InitializationException;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifier;
+import de.hshannover.f4.trust.ifmapj.identifier.Identifiers;
+import de.hshannover.f4.trust.ifmapj.identifier.IdentityType;
 import de.hshannover.f4.trust.ifmapj.messages.Requests;
 import de.hshannover.f4.trust.ifmapj.messages.ResultItem;
 import de.hshannover.f4.trust.ifmapj.messages.SearchRequest;
@@ -85,66 +79,17 @@ import de.hshannover.f4.trust.ifmapj.messages.SearchResult;
 public class Search {
 	final static String CMD = "search";
 
-	// CLI options parser stuff ( not the actual input params )
-	Options mOptions;
-	Option mIdentifier;
-	Option mValue;
-	Option mMatchLinks;
-	Option mMaxDepth;
-	Option mMaxSize;
-	Option mResultFilter;
-	Option mTerminalIdentifierTypes;
-	Option mHelp;
-	Option mNameSpacePrefix;
-	Option mNameSpaceURI;
-
-	// parsed command line options
-	CommandLine mCmdLine;
-
-	// configuration
-	Config mConfig;
-
-	// SSRC
-	SSRC mSsrc;
-
-	// ifmapj stuff
-	SearchRequest mSearchRequest;
-	SearchResult mSearchResult;
-	Identifier startIdentifier;
-
-	/**
-	 *
-	 * @param args
-	 * @throws FileNotFoundException
-	 * @throws InitializationException
-	 */
-	public Search(String[] args) throws FileNotFoundException,
-			InitializationException {
-		mConfig = Common.loadEnvParams();
-		parseCommandLine(args);
-		prepareSearchRequest();
-		initSsrc();
+	enum IdType {
+		ipv4, ipv6, mac, dev, ar, id
 	}
-
-	/**
-	 * Create session, start search, parse results, end session
-	 *
-	 * @throws IfmapErrorResult
-	 * @throws IfmapException
-	 */
-	public void start() throws IfmapErrorResult, IfmapException {
-		mSsrc.newSession();
-		mSearchResult = mSsrc.search(mSearchRequest);
-		parseSearchResult();
-		mSsrc.endSession();
-	}
-
+	
 	/**
 	 * Fetch {@link ResultItem} objects and print them to console
+	 * @param searchResult 
 	 */
-	private void parseSearchResult() {
+	private static void parseSearchResult(SearchResult searchResult) {
 
-		Collection<ResultItem> resultItems = mSearchResult.getResultItems();
+		Collection<ResultItem> resultItems = searchResult.getResultItems();
 		for (ResultItem resultItem : resultItems) {
 			System.out.println("****************************************************************************");
 			System.out.println(resultItem);
@@ -160,210 +105,174 @@ public class Search {
 		}
 	}
 
-	/**
-	 * create {@link SearchRequest} object
-	 */
-	private void prepareSearchRequest() {
-		mSearchRequest = Requests.createSearchReq();
+	public static void main(String[] args) {
+		final String KEY_IDENTIFIER = "identifier";
+		final String KEY_IDENTIFIER_TYPE = "identifierType";
+		final String KEY_MATCH_LINKS = "matchLinks";
+		final String KEY_MAX_DEPTH = "maxDepth";
+		final String KEY_MAX_SIZE = "maxSize";
+		final String KEY_RESULT_FILTER = "resultFilter";
+		final String KEY_TERMINAL_IDENTIFIER_TYPE = "terminal-identifier-type";
+		final String KEY_NAMESPACE_PREFIX = "namespacePrefix";
+		final String KEY_NAMESPACE_URI = "namespaceUri";
+
+		ArgumentParser parser = ArgumentParsers.newArgumentParser(CMD);
+		parser.addArgument("identifier-type")
+		.type(IdType.class)
+		.dest(KEY_IDENTIFIER_TYPE)
+		.choices(
+			IdType.ipv4,
+			IdType.ipv6,
+			IdType.mac,
+			IdType.dev,
+			IdType.ar,
+			IdType.id)
+			.help("the type of the identifier");
+		parser.addArgument("identifier")
+			.type(String.class)
+			.dest(KEY_IDENTIFIER)
+			.help("the identifier");
+		parser.addArgument("--match-links", "-ml")
+			.type(String.class)
+			.dest(KEY_MATCH_LINKS)
+			.help("filter for match-links. default is match-all (example: meta:ip-mac)");
+		parser.addArgument("--max-depth", "-md")
+			.type(Integer.class)
+			.dest(KEY_MAX_DEPTH)
+			.setDefault(0)
+			.help("maximum depth for search. default is 0");
+		parser.addArgument("--max-size", "-ms")
+			.type(Integer.class)
+			.dest(KEY_MAX_SIZE)
+			.help("maximum size for search results. default=based on MAPS");
+		parser.addArgument("--result-filter", "-rf")
+			.type(String.class)
+			.dest(KEY_RESULT_FILTER)
+			.help("result-filter for search results. default=match-all. example: meta:ip-mac");
+		parser.addArgument("--terminal-identifier-type", "-tt")
+			.type(String.class)
+			.dest(KEY_TERMINAL_IDENTIFIER_TYPE)
+			.help("comma-separated type of the terminal identifier(s): ip-address,mac-address,device,access-request,identity");
+		parser.addArgument("--namespace-prefix", "-nP")
+			.type(String.class)
+			.dest(KEY_NAMESPACE_PREFIX)
+			.help("custom namespace prefix. example: foo");		
+		parser.addArgument("--namespace-uri", "-nU")
+			.type(String.class)
+			.dest(KEY_NAMESPACE_URI)
+			.help("custom namespace URI. example: http://www.foo.bar/2012/ifmap-metadata/1");
+		ParserUtil.addConnectionArgumentsTo(parser);
+		ParserUtil.addCommonArgumentsTo(parser);
+
+		Namespace res = null;
+		try {
+			res = parser.parseArgs(args);
+		} catch (ArgumentParserException e) {
+			parser.handleError(e);
+			System.exit(1);
+		}
+
+		if (res.getBoolean(ParserUtil.VERBOSE)) {
+			StringBuilder sb = new StringBuilder();
+			
+			sb.append(CMD).append(" ");
+			sb.append(KEY_IDENTIFIER_TYPE).append("=").append(res.get(KEY_IDENTIFIER_TYPE)).append(" ");
+			sb.append(KEY_IDENTIFIER).append("=").append(res.getString(KEY_IDENTIFIER)).append(" ");
+			ParserUtil.appendStringIfNotNull(sb, res, KEY_MATCH_LINKS);
+			ParserUtil.appendIntegerIfNotNull(sb, res, KEY_MAX_DEPTH);
+			ParserUtil.appendIntegerIfNotNull(sb, res, KEY_MAX_SIZE);
+			ParserUtil.appendStringIfNotNull(sb, res, KEY_RESULT_FILTER);
+			ParserUtil.appendStringIfNotNull(sb, res, KEY_TERMINAL_IDENTIFIER_TYPE);
+			ParserUtil.appendStringIfNotNull(sb, res, KEY_NAMESPACE_PREFIX);
+			ParserUtil.appendStringIfNotNull(sb, res, KEY_NAMESPACE_URI);
+			
+			ParserUtil.printConnectionArguments(sb, res);
+			System.out.println(sb.toString());
+		}
+		
+		SearchRequest searchRequest = Requests.createSearchReq();
 
 		// set start identifier
-		Identifier startIdentifier = null;
-		IdentifierEnum type = IdentifierEnum.valueOf(mCmdLine
-				.getOptionValue(mIdentifier.getOpt()));
-		String value = mCmdLine.getOptionValue(mValue.getOpt());
-		startIdentifier = type.getIdentifier(value);
-		mSearchRequest.setStartIdentifier(startIdentifier);
+		IdType identifierType = res.get(KEY_IDENTIFIER_TYPE);
+		String identifierName = res.getString(KEY_IDENTIFIER);
+		Identifier startIdentifier = getIdentifier(identifierType, identifierName);
+		searchRequest.setStartIdentifier(startIdentifier);
 
 		// set match-links if necessary
-		if (mCmdLine.hasOption(mMatchLinks.getOpt())) {
-			mSearchRequest.setMatchLinksFilter(mCmdLine
-					.getOptionValue(mMatchLinks.getOpt()));
+		if (res.getString(KEY_MATCH_LINKS) != null) {
+			searchRequest.setMatchLinksFilter(res.getString(KEY_MATCH_LINKS));
 		}
 
 		// set max-depth if necessary
-		if (mCmdLine.hasOption(mMaxDepth.getOpt())) {
-			mSearchRequest.setMaxDepth(Integer.valueOf(mCmdLine
-					.getOptionValue(mMaxDepth.getOpt())));
+		if (res.getInt(KEY_MAX_DEPTH) != null) {
+			searchRequest.setMaxDepth(res.getInt(KEY_MAX_DEPTH));
 		}
 
 		// set max-size if necessary
-		if (mCmdLine.hasOption(mMaxSize.getOpt())) {
-			mSearchRequest.setMaxSize(Integer.valueOf(mCmdLine
-					.getOptionValue(mMaxSize.getOpt())));
+		if (res.getInt(KEY_MAX_SIZE) != null) {
+			searchRequest.setMaxSize(res.getInt(KEY_MAX_SIZE));
 		}
 
 		// set result-filter if necessary
-		if (mCmdLine.hasOption(mResultFilter.getOpt())) {
-			mSearchRequest.setResultFilter(mCmdLine
-					.getOptionValue(mResultFilter.getOpt()));
+		if (res.getString(KEY_RESULT_FILTER) != null) {
+			searchRequest.setResultFilter(res.getString(KEY_RESULT_FILTER));
 		}
 
 		// set terminal-identifier-type if necessary
-		if (mCmdLine.hasOption(mTerminalIdentifierTypes.getOpt())) {
-			mSearchRequest.setTerminalIdentifierTypes(mCmdLine
-					.getOptionValue(mTerminalIdentifierTypes.getOpt()));
+		if (res.getString(KEY_TERMINAL_IDENTIFIER_TYPE) != null) {
+			searchRequest.setTerminalIdentifierTypes(res.getString(KEY_TERMINAL_IDENTIFIER_TYPE));
 		}
 
 		// add default namespaces
-		mSearchRequest.addNamespaceDeclaration(IfmapStrings.BASE_PREFIX,
-				IfmapStrings.BASE_NS_URI);
-		mSearchRequest.addNamespaceDeclaration(
-				IfmapStrings.STD_METADATA_PREFIX,
-				IfmapStrings.STD_METADATA_NS_URI);
+		searchRequest.addNamespaceDeclaration(IfmapStrings.BASE_PREFIX,
+			IfmapStrings.BASE_NS_URI);
+		searchRequest.addNamespaceDeclaration(
+			IfmapStrings.STD_METADATA_PREFIX,
+			IfmapStrings.STD_METADATA_NS_URI);
 
 		// add custom namespaces
-		if (mCmdLine.hasOption(mNameSpacePrefix.getOpt()) && mCmdLine.hasOption(mNameSpaceURI.getOpt())) {
-			mSearchRequest.addNamespaceDeclaration(
-					mCmdLine.getOptionValue(mNameSpacePrefix.getOpt()),
-					mCmdLine.getOptionValue(mNameSpaceURI.getOpt()));
+		if ((res.getString(KEY_NAMESPACE_PREFIX) != null) && (res.getString(KEY_NAMESPACE_URI) != null)) {
+			searchRequest.addNamespaceDeclaration(
+				res.getString(KEY_NAMESPACE_PREFIX),
+				res.getString(KEY_NAMESPACE_URI));
 		}
-
-	}
-
-	/**
-	 * parse the command line by using Apache commons-cli
-	 *
-	 * @param args
-	 */
-	private void parseCommandLine(String[] args) {
-		mOptions = new Options();
-		// automatically generate the help statement
-		HelpFormatter formatter = new HelpFormatter();
-		formatter.setWidth(100);
-
-		// boolean options
-		mHelp = new Option("h", "help", false, "print this message");
-		mOptions.addOption(mHelp);
-
-		// argument options
-		// identifier
-		OptionBuilder.hasArg();
-		OptionBuilder.isRequired();
-		OptionBuilder.withArgName("type");
-		OptionBuilder.withDescription("abbreviated type of start identifier, "
-				+ IdentifierEnum.ip + " | " + IdentifierEnum.mac + " | "
-				+ IdentifierEnum.ar + " | " + IdentifierEnum.id + " | "
-				+ IdentifierEnum.dev);
-//		OptionBuilder.withLongOpt("identifier");
-		OptionBuilder.withType(IdentifierEnum.class);
-		mIdentifier = OptionBuilder.create("i");
-		mOptions.addOption(mIdentifier);
-
-		// value
-		OptionBuilder.hasArg();
-		OptionBuilder.isRequired();
-		OptionBuilder.withArgName("value");
-		OptionBuilder.withDescription("value of identifier");
-//		OptionBuilder.withLongOpt("value");
-		mValue = OptionBuilder.create("v");
-		mOptions.addOption(mValue);
-
-		// match-links
-		OptionBuilder.hasArg();
-		OptionBuilder.withArgName("filter");
-		OptionBuilder
-				.withDescription("filter for match-links. default is match-all. example: meta:ip-mac");
-//		OptionBuilder.withLongOpt("match-links");
-		mMatchLinks = OptionBuilder.create("ml");
-		mOptions.addOption(mMatchLinks);
-
-		// max-depth
-		OptionBuilder.hasArg();
-		OptionBuilder.withArgName("depth");
-		OptionBuilder
-				.withDescription("maximum depth for search. default is 0");
-//		OptionBuilder.withLongOpt("max-depth");
-		mMaxDepth = OptionBuilder.create("md");
-		mOptions.addOption(mMaxDepth);
-
-		// max-size
-		OptionBuilder.hasArg();
-		OptionBuilder.withArgName("size");
-		OptionBuilder
-				.withDescription("maximum size for search results. default=based on MAPS");
-//		OptionBuilder.withLongOpt("max-size");
-		mMaxSize = OptionBuilder.create("ms");
-		mOptions.addOption(mMaxSize);
-
-		// result-filter
-		OptionBuilder.hasArg();
-		OptionBuilder.withArgName("filter");
-		OptionBuilder
-				.withDescription("result-filter for search results. default=match-all. example: meta:ip-mac");
-//		OptionBuilder.withLongOpt("result-filter");
-		mResultFilter = OptionBuilder.create("rf");
-		mOptions.addOption(mResultFilter);
-
-		// terminal-identifier-type
-		OptionBuilder.hasArg();
-		OptionBuilder.withArgName("t1,t2,...");
-		OptionBuilder.withDescription("comma separated list of identifier types: "
-				+ "ip-address,mac-address,device,access-request,identity");
-//		OptionBuilder.withLongOpt("terminal-identifier-types");
-		mTerminalIdentifierTypes = OptionBuilder.create("tit");
-		mOptions.addOption(mTerminalIdentifierTypes);
-
-		// namespace declarations: prefix
-		OptionBuilder.hasArg();
-		OptionBuilder.withDescription("custom namespace prefix. example: foo");
-//		OptionBuilder.withLongOpt("namespace-prefix");
-		mNameSpacePrefix = OptionBuilder.create("nP");
-		mOptions.addOption(mNameSpacePrefix);
-
-		// namespace declarations: URI
-		OptionBuilder.hasArg();
-		OptionBuilder.withDescription("custom namespace URI. example: http://www.foo.bar/2012/ifmap-metadata/1");
-//		OptionBuilder.withLongOpt("namespace-uri");
-		mNameSpaceURI = OptionBuilder.create("nU");
-		mOptions.addOption(mNameSpaceURI);
-
-		// create the parser
-		CommandLineParser parser = new GnuParser();
+		
+		// search
 		try {
-			// parse the command line arguments
-			mCmdLine = parser.parse(mOptions, args);
-		} catch (ParseException exp) {
-			// oops, something went wrong
-			System.err.println("Parsing failed.  Reason: " + exp.getMessage());
-			formatter.printHelp(
-					Search.CMD + " -i <type> -v <value> [OPTION]...", mOptions);
-			System.out.println(Common.USAGE);
-			System.exit(1);
+			InputStream is = Common.prepareTruststoreIs(res.getString(ParserUtil.KEYSTORE_PATH));
+			TrustManager[] tms = IfmapJHelper.getTrustManagers(is, res.getString(ParserUtil.KEYSTORE_PASS));
+			SSRC ssrc = IfmapJ.createSSRC(
+				res.getString(ParserUtil.URL),
+				res.getString(ParserUtil.USER),
+				res.getString(ParserUtil.PASS),
+				tms);
+			ssrc.newSession();
+			SearchResult searchResult = ssrc.search(searchRequest);
+			parseSearchResult(searchResult);
+			ssrc.endSession();
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.exit(-1);
 		}
 	}
 
-	/**
-	 * Load {@link TrustManager} instances and create {@link SSRC}.
-	 *
-	 * @throws FileNotFoundException
-	 * @throws InitializationException
-	 */
-	private void initSsrc() throws FileNotFoundException,
-			InitializationException {
-		InputStream is = Common
-				.prepareTruststoreIs(mConfig.getTruststorePath());
-		TrustManager[] tms = IfmapJHelper.getTrustManagers(is,
-				mConfig.getTruststorePass());
-		mSsrc = IfmapJ.createSSRC(mConfig.getUrl(), mConfig.getUser(),
-				mConfig.getPass(), tms);
-	}
-
-	/**
-	 * @param args
-	 */
-	public static void main(String[] args) {
-		try {
-			Search s = new Search(args);
-			s.start();
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (InitializationException e) {
-			e.printStackTrace();
-		} catch (IfmapErrorResult e) {
-			e.printStackTrace();
-		} catch (IfmapException e) {
-			e.printStackTrace();
+	private static Identifier getIdentifier(IdType type, String name) {
+		switch (type) {
+		case ipv4:
+			return Identifiers.createIp4(name);
+		case ipv6:
+			return Identifiers.createIp6(name);
+		case id:
+			// TODO add optinal parameter for the identity identifier type
+			return Identifiers.createIdentity(IdentityType.other, name);
+		case mac:
+			return Identifiers.createMac(name);
+		case dev:
+			return Identifiers.createDev(name);
+		case ar:
+			return Identifiers.createAr(name);
+		default:
+			throw new RuntimeException("unknown identifier type '" + type + "'");
 		}
 	}
-
 }

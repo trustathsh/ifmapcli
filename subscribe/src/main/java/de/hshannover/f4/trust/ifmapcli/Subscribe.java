@@ -39,7 +39,6 @@
 package de.hshannover.f4.trust.ifmapcli;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -49,29 +48,24 @@ import java.util.Vector;
 import javax.net.ssl.TrustManager;
 import javax.xml.transform.TransformerException;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.GnuParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.OptionBuilder;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
+import net.sourceforge.argparse4j.ArgumentParsers;
+import net.sourceforge.argparse4j.inf.ArgumentParser;
+import net.sourceforge.argparse4j.inf.ArgumentParserException;
+import net.sourceforge.argparse4j.inf.Namespace;
+
 import org.w3c.dom.Document;
 
 import de.hshannover.f4.trust.ifmapcli.common.Common;
-import de.hshannover.f4.trust.ifmapcli.common.Config;
-import de.hshannover.f4.trust.ifmapcli.common.IdentifierEnum;
+import de.hshannover.f4.trust.ifmapcli.common.ParserUtil;
 import de.hshannover.f4.trust.ifmapj.IfmapJ;
 import de.hshannover.f4.trust.ifmapj.IfmapJHelper;
 import de.hshannover.f4.trust.ifmapj.binding.IfmapStrings;
 import de.hshannover.f4.trust.ifmapj.channel.ARC;
 import de.hshannover.f4.trust.ifmapj.channel.SSRC;
-import de.hshannover.f4.trust.ifmapj.exception.EndSessionException;
 import de.hshannover.f4.trust.ifmapj.exception.IfmapErrorResult;
-import de.hshannover.f4.trust.ifmapj.exception.IfmapException;
-import de.hshannover.f4.trust.ifmapj.exception.InitializationException;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifier;
+import de.hshannover.f4.trust.ifmapj.identifier.Identifiers;
+import de.hshannover.f4.trust.ifmapj.identifier.IdentityType;
 import de.hshannover.f4.trust.ifmapj.messages.PollResult;
 import de.hshannover.f4.trust.ifmapj.messages.Requests;
 import de.hshannover.f4.trust.ifmapj.messages.ResultItem;
@@ -94,91 +88,20 @@ import de.hshannover.f4.trust.ifmapj.messages.SubscribeUpdate;
 public class Subscribe {
 	final static String CMD = "subscribe";
 	private static int counter = 0;
-
-	// CLI options parser stuff ( not the actual input params )
-	Options mOptions;
-	Option mIdentifier;
-	Option mValue;
-	Option mMatchLinks;
-	Option mMaxDepth;
-	Option mMaxSize;
-	Option mResultFilter;
-	Option mTerminalIdentifierTypes;
-	Option mHelp;
-	Option mNameSpacePrefix;
-	Option mNameSpaceURI;
-
-	// parsed command line options
-	CommandLine mCmdLine;
-
-	// configuration
-	Config mConfig;
-
-	// SSRC
-	SSRC mSsrc;
-
-	// ARC
-	ARC mArc;
-
-	// ifmapj stuff
-	SubscribeRequest mSubscribeRequest;
-	PollResult mPollResult;
-	Identifier startIdentifier;
-
-	/**
-	 *
-	 * @param args
-	 * @throws FileNotFoundException
-	 * @throws InitializationException
-	 */
-	public Subscribe(String[] args) throws FileNotFoundException,
-			InitializationException {
-		mConfig = Common.loadEnvParams();
-		parseCommandLine(args);
-		prepareSubscribeRequest();
-		initSsrc();
-		initArc();
-	}
-
-	/**
-	 * Create session
-	 * Issue Subscription
-	 * Poll for results and print them
-	 *
-	 * @throws IfmapErrorResult
-	 * @throws IfmapException
-	 * @throws EndSessionException
-	 */
-	public void start() throws IfmapErrorResult, IfmapException, EndSessionException {
-		mSsrc.newSession();
-		mSsrc.subscribe(mSubscribeRequest);
-		while(true){
-			System.out.println("Hit enter to proceed ...");
-			try {
-				new BufferedReader(new InputStreamReader(System.in)).readLine();
-			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-			System.out.println("Polling #" + Subscribe.counter++ + " ...");
-			mPollResult = mArc.poll();
-			parsePollResult();
-	    	try {
-	    		Thread.sleep(1000);
-	    	} catch (InterruptedException e) {
-	    		// ignore
-	    	}
-		}
+	
+	enum IdType {
+		ipv4, ipv6, mac, dev, ar, id
 	}
 
 	/**
 	 * Fetch poll results and print them to console
+	 * @param pollResult 
 	 */
-	private void parsePollResult() {
+	private static void parsePollResult(PollResult pollResult) {
 
 		// error, search, update, delete, notify
-		Collection<IfmapErrorResult> errorRes = mPollResult.getErrorResults();
-		Collection<SearchResult> allRes    = mPollResult.getResults();
+		Collection<IfmapErrorResult> errorRes = pollResult.getErrorResults();
+		Collection<SearchResult> allRes    = pollResult.getResults();
 		Collection<SearchResult> searchRes = new Vector<SearchResult>();
 		Collection<SearchResult> updateRes = new Vector<SearchResult>();
 		Collection<SearchResult> deleteRes = new Vector<SearchResult>();
@@ -243,7 +166,7 @@ public class Subscribe {
 	/**
 	 * Parse {@link SearchResult} object and print it to console
 	 */
-	private void parseSearchResult(SearchResult sr) {
+	private static void parseSearchResult(SearchResult sr) {
 		for (ResultItem resultItem : sr.getResultItems()) {
 			System.out.println("****************************************************************************");
 			System.out.println(resultItem);
@@ -259,52 +182,126 @@ public class Subscribe {
 		}
 	}
 
-	/**
-	 * create {@link SubscribeRequest} object
-	 */
-	private void prepareSubscribeRequest() {
-		mSubscribeRequest = Requests.createSubscribeReq();
+	public static void main(String[] args) {
+		final String KEY_IDENTIFIER = "identifier";
+		final String KEY_IDENTIFIER_TYPE = "identifierType";
+		final String KEY_MATCH_LINKS = "matchLinks";
+		final String KEY_MAX_DEPTH = "maxDepth";
+		final String KEY_MAX_SIZE = "maxSize";
+		final String KEY_RESULT_FILTER = "resultFilter";
+		final String KEY_TERMINAL_IDENTIFIER_TYPE = "terminal-identifier-type";
+		final String KEY_NAMESPACE_PREFIX = "namespacePrefix";
+		final String KEY_NAMESPACE_URI = "namespaceUri";
+
+		ArgumentParser parser = ArgumentParsers.newArgumentParser(CMD);
+		parser.addArgument("identifier-type")
+		.type(IdType.class)
+		.dest(KEY_IDENTIFIER_TYPE)
+		.choices(
+			IdType.ipv4,
+			IdType.ipv6,
+			IdType.mac,
+			IdType.dev,
+			IdType.ar,
+			IdType.id)
+			.help("the type of the identifier");
+		parser.addArgument("identifier")
+			.type(String.class)
+			.dest(KEY_IDENTIFIER)
+			.help("the identifier");
+		parser.addArgument("--match-links", "-ml")
+			.type(String.class)
+			.dest(KEY_MATCH_LINKS)
+			.help("filter for match-links. default is match-all (example: meta:ip-mac)");
+		parser.addArgument("--max-depth", "-md")
+			.type(Integer.class)
+			.dest(KEY_MAX_DEPTH)
+			.setDefault(0)
+			.help("maximum depth for search. default is 0");
+		parser.addArgument("--max-size", "-ms")
+			.type(Integer.class)
+			.dest(KEY_MAX_SIZE)
+			.help("maximum size for search results. default=based on MAPS");
+		parser.addArgument("--result-filter", "-rf")
+			.type(String.class)
+			.dest(KEY_RESULT_FILTER)
+			.help("result-filter for search results. default=match-all. example: meta:ip-mac");
+		parser.addArgument("--terminal-identifier-type", "-tt")
+			.type(String.class)
+			.dest(KEY_TERMINAL_IDENTIFIER_TYPE)
+			.help("comma-separated type of the terminal identifier(s): ip-address,mac-address,device,access-request,identity");
+		parser.addArgument("--namespace-prefix", "-nP")
+			.type(String.class)
+			.dest(KEY_NAMESPACE_PREFIX)
+			.help("custom namespace prefix. example: foo");		
+		parser.addArgument("--namespace-uri", "-nU")
+			.type(String.class)
+			.dest(KEY_NAMESPACE_URI)
+			.help("custom namespace URI. example: http://www.foo.bar/2012/ifmap-metadata/1");
+		ParserUtil.addConnectionArgumentsTo(parser);
+		ParserUtil.addCommonArgumentsTo(parser);
+
+		Namespace res = null;
+		try {
+			res = parser.parseArgs(args);
+		} catch (ArgumentParserException e) {
+			parser.handleError(e);
+			System.exit(1);
+		}
+
+		if (res.getBoolean(ParserUtil.VERBOSE)) {
+			StringBuilder sb = new StringBuilder();
+			
+			sb.append(CMD).append(" ");
+			sb.append(KEY_IDENTIFIER_TYPE).append("=").append(res.get(KEY_IDENTIFIER_TYPE)).append(" ");
+			sb.append(KEY_IDENTIFIER).append("=").append(res.getString(KEY_IDENTIFIER)).append(" ");
+			ParserUtil.appendStringIfNotNull(sb, res, KEY_MATCH_LINKS);
+			ParserUtil.appendIntegerIfNotNull(sb, res, KEY_MAX_DEPTH);
+			ParserUtil.appendIntegerIfNotNull(sb, res, KEY_MAX_SIZE);
+			ParserUtil.appendStringIfNotNull(sb, res, KEY_RESULT_FILTER);
+			ParserUtil.appendStringIfNotNull(sb, res, KEY_TERMINAL_IDENTIFIER_TYPE);
+			ParserUtil.appendStringIfNotNull(sb, res, KEY_NAMESPACE_PREFIX);
+			ParserUtil.appendStringIfNotNull(sb, res, KEY_NAMESPACE_URI);
+			
+			ParserUtil.printConnectionArguments(sb, res);
+			System.out.println(sb.toString());
+		}
+		
+		SubscribeRequest subscribeRequest = Requests.createSubscribeReq();
 		SubscribeUpdate su = Requests.createSubscribeUpdate();
 
 		// set name
 		su.setName("example-subscription");
 
 		// set start identifier
-		Identifier startIdentifier = null;
-		IdentifierEnum type = IdentifierEnum.valueOf(mCmdLine
-				.getOptionValue(mIdentifier.getOpt()));
-		String value = mCmdLine.getOptionValue(mValue.getOpt());
-		startIdentifier = type.getIdentifier(value);
+		IdType identifierType = res.get(KEY_IDENTIFIER_TYPE);
+		String identifierName = res.getString(KEY_IDENTIFIER);
+		Identifier startIdentifier = getIdentifier(identifierType, identifierName);
 		su.setStartIdentifier(startIdentifier);
 
 		// set match-links if necessary
-		if (mCmdLine.hasOption(mMatchLinks.getOpt())) {
-			su.setMatchLinksFilter(mCmdLine
-					.getOptionValue(mMatchLinks.getOpt()));
+		if (res.getString(KEY_MATCH_LINKS) != null) {
+			su.setMatchLinksFilter(res.getString(KEY_MATCH_LINKS));
 		}
 
 		// set max-depth if necessary
-		if (mCmdLine.hasOption(mMaxDepth.getOpt())) {
-			su.setMaxDepth(Integer.valueOf(mCmdLine
-					.getOptionValue(mMaxDepth.getOpt())));
+		if (res.getInt(KEY_MAX_DEPTH) != null) {
+			su.setMaxDepth(res.getInt(KEY_MAX_DEPTH));
 		}
 
 		// set max-size if necessary
-		if (mCmdLine.hasOption(mMaxSize.getOpt())) {
-			su.setMaxSize(Integer.valueOf(mCmdLine
-					.getOptionValue(mMaxSize.getOpt())));
+		if (res.getInt(KEY_MAX_SIZE) != null) {
+			su.setMaxSize(res.getInt(KEY_MAX_SIZE));
 		}
 
 		// set result-filter if necessary
-		if (mCmdLine.hasOption(mResultFilter.getOpt())) {
-			su.setResultFilter(mCmdLine
-					.getOptionValue(mResultFilter.getOpt()));
+		if (res.getString(KEY_RESULT_FILTER) != null) {
+			su.setResultFilter(res.getString(KEY_RESULT_FILTER));
 		}
 
 		// set terminal-identifier-type if necessary
-		if (mCmdLine.hasOption(mTerminalIdentifierTypes.getOpt())) {
-			su.setTerminalIdentifierTypes(mCmdLine
-					.getOptionValue(mTerminalIdentifierTypes.getOpt()));
+		if (res.getString(KEY_TERMINAL_IDENTIFIER_TYPE) != null) {
+			su.setTerminalIdentifierTypes(res.getString(KEY_TERMINAL_IDENTIFIER_TYPE));
 		}
 
 		// add default namespaces
@@ -315,168 +312,70 @@ public class Subscribe {
 				IfmapStrings.STD_METADATA_NS_URI);
 
 		// add custom namespaces
-		if (mCmdLine.hasOption(mNameSpacePrefix.getOpt()) && mCmdLine.hasOption(mNameSpaceURI.getOpt())) {
+		if ((res.getString(KEY_NAMESPACE_PREFIX) != null) && (res.getString(KEY_NAMESPACE_URI) != null)) {
 			su.addNamespaceDeclaration(
-					mCmdLine.getOptionValue(mNameSpacePrefix.getOpt()),
-					mCmdLine.getOptionValue(mNameSpaceURI.getOpt()));
+					res.getString(KEY_NAMESPACE_PREFIX),
+					res.getString(KEY_NAMESPACE_URI));
 		}
 
-		mSubscribeRequest.addSubscribeElement(su);
-	}
-
-	/**
-	 * parse the command line by using Apache commons-cli
-	 *
-	 * @param args
-	 */
-	private void parseCommandLine(String[] args) {
-		mOptions = new Options();
-		// automatically generate the help statement
-		HelpFormatter formatter = new HelpFormatter();
-		formatter.setWidth(100);
-
-		// boolean options
-		mHelp = new Option("h", "help", false, "print this message");
-		mOptions.addOption(mHelp);
-
-		// argument options
-		// identifier
-		OptionBuilder.hasArg();
-		OptionBuilder.isRequired();
-		OptionBuilder.withArgName("type");
-		OptionBuilder.withDescription("abbreviated type of start identifier, "
-				+ IdentifierEnum.ip + " | " + IdentifierEnum.mac + " | "
-				+ IdentifierEnum.ar + " | " + IdentifierEnum.id + " | "
-				+ IdentifierEnum.dev);
-//		OptionBuilder.withLongOpt("identifier");
-		OptionBuilder.withType(IdentifierEnum.class);
-		mIdentifier = OptionBuilder.create("i");
-		mOptions.addOption(mIdentifier);
-
-		// value
-		OptionBuilder.hasArg();
-		OptionBuilder.isRequired();
-		OptionBuilder.withArgName("value");
-		OptionBuilder.withDescription("value of identifier");
-//		OptionBuilder.withLongOpt("value");
-		mValue = OptionBuilder.create("v");
-		mOptions.addOption(mValue);
-
-		// match-links
-		OptionBuilder.hasArg();
-		OptionBuilder.withArgName("filter");
-		OptionBuilder
-				.withDescription("filter for match-links. default is match-all. example: meta:ip-mac");
-//		OptionBuilder.withLongOpt("match-links");
-		mMatchLinks = OptionBuilder.create("ml");
-		mOptions.addOption(mMatchLinks);
-
-		// max-depth
-		OptionBuilder.hasArg();
-		OptionBuilder.withArgName("depth");
-		OptionBuilder
-				.withDescription("maximum depth for search. default is 0");
-//		OptionBuilder.withLongOpt("max-depth");
-		mMaxDepth = OptionBuilder.create("md");
-		mOptions.addOption(mMaxDepth);
-
-		// max-size
-		OptionBuilder.hasArg();
-		OptionBuilder.withArgName("size");
-		OptionBuilder
-				.withDescription("maximum size for search results. default=based on MAPS");
-//		OptionBuilder.withLongOpt("max-size");
-		mMaxSize = OptionBuilder.create("ms");
-		mOptions.addOption(mMaxSize);
-
-		// result-filter
-		OptionBuilder.hasArg();
-		OptionBuilder.withArgName("filter");
-		OptionBuilder
-				.withDescription("result-filter for search results. default=match-all. example: meta:ip-mac");
-//		OptionBuilder.withLongOpt("result-filter");
-		mResultFilter = OptionBuilder.create("rf");
-		mOptions.addOption(mResultFilter);
-
-		// terminal-identifier-type
-		OptionBuilder.hasArg();
-		OptionBuilder.withArgName("t1,t2,...");
-		OptionBuilder.withDescription("comma separated list of identifier types: "
-				+ "ip-address,mac-address,device,access-request,identity");
-//		OptionBuilder.withLongOpt("terminal-identifier-types");
-		mTerminalIdentifierTypes = OptionBuilder.create("tit");
-		mOptions.addOption(mTerminalIdentifierTypes);
-
-		// namespace declarations: prefix
-		OptionBuilder.hasArg();
-		OptionBuilder.withDescription("custom namespace prefix. example: foo");
-//		OptionBuilder.withLongOpt("namespace-prefix");
-		mNameSpacePrefix = OptionBuilder.create("nP");
-		mOptions.addOption(mNameSpacePrefix);
-
-		// namespace declarations: URI
-		OptionBuilder.hasArg();
-		OptionBuilder.withDescription("custom namespace URI. example: http://www.foo.bar/2012/ifmap-metadata/1");
-//		OptionBuilder.withLongOpt("namespace-uri");
-		mNameSpaceURI = OptionBuilder.create("nU");
-		mOptions.addOption(mNameSpaceURI);
-
-		// create the parser
-		CommandLineParser parser = new GnuParser();
+		subscribeRequest.addSubscribeElement(su);
+		
+		SSRC ssrc = null;
 		try {
-			// parse the command line arguments
-			mCmdLine = parser.parse(mOptions, args);
-		} catch (ParseException exp) {
-			// oops, something went wrong
-			System.err.println("Parsing failed.  Reason: " + exp.getMessage());
-			formatter.printHelp(
-					Subscribe.CMD + " -i <type> -v <value> [OPTION]...", mOptions);
-			System.out.println(Common.USAGE);
-			System.exit(1);
+			InputStream is = Common.prepareTruststoreIs(res.getString(ParserUtil.KEYSTORE_PATH));
+			TrustManager[] tms = IfmapJHelper.getTrustManagers(is, res.getString(ParserUtil.KEYSTORE_PASS));
+			ssrc = IfmapJ.createSSRC(
+					res.getString(ParserUtil.URL),
+					res.getString(ParserUtil.USER),
+					res.getString(ParserUtil.PASS),
+					tms);
+			ssrc.newSession();
+			ARC mArc = ssrc.getArc();
+			
+			ssrc.newSession();
+			ssrc.subscribe(subscribeRequest);
+			while (true) {
+				System.out.println("Hit enter to proceed ...");
+				try {
+					new BufferedReader(new InputStreamReader(System.in)).readLine();
+				} catch (IOException e1) {
+					e1.printStackTrace();
+					System.exit(-1);
+				}
+				System.out.println("Polling #" + Subscribe.counter++ + " ...");
+				PollResult pollResult = mArc.poll();
+				parsePollResult(pollResult);
+				try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+					System.exit(-1);
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.exit(-1);
 		}
 	}
 
-	/**
-	 * Load {@link TrustManager} instances and create {@link SSRC}.
-	 *
-	 * @throws FileNotFoundException
-	 * @throws InitializationException
-	 */
-	private void initSsrc() throws FileNotFoundException,
-			InitializationException {
-		InputStream is = Common
-				.prepareTruststoreIs(mConfig.getTruststorePath());
-		TrustManager[] tms = IfmapJHelper.getTrustManagers(is,
-				mConfig.getTruststorePass());
-		mSsrc = IfmapJ.createSSRC(mConfig.getUrl(), mConfig.getUser(),
-				mConfig.getPass(), tms);
-	}
-
-	/**
-	 * @throws InitializationException
-	 */
-	private void initArc() throws InitializationException {
-		mArc = mSsrc.getArc();
-	}
-
-	/**
-	 * @param args
-	 */
-	public static void main(String[] args) {
-		try {
-			Subscribe s = new Subscribe(args);
-			s.start();
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (InitializationException e) {
-			e.printStackTrace();
-		} catch (IfmapErrorResult e) {
-			e.printStackTrace();
-		} catch (IfmapException e) {
-			e.printStackTrace();
-		} catch (EndSessionException e) {
-			e.printStackTrace();
+	private static Identifier getIdentifier(IdType type, String name) {
+		switch (type) {
+		case ipv4:
+			return Identifiers.createIp4(name);
+		case ipv6:
+			return Identifiers.createIp6(name);
+		case id:
+			// TODO add optinal parameter for the identity identifier type
+			return Identifiers.createIdentity(IdentityType.other, name);
+		case mac:
+			return Identifiers.createMac(name);
+		case dev:
+			return Identifiers.createDev(name);
+		case ar:
+			return Identifiers.createAr(name);
+		default:
+			throw new RuntimeException("unknown identifier type '" + type + "'");
 		}
 	}
-
+	
 }

@@ -97,17 +97,17 @@ public class DiscBy {
 			.choices("update", "delete")
 			.help("the publish operation");
 		parser.addArgument("identifier-type")
-		.type(IdType.class)
-		.dest(KEY_IDENTIFIER_TYPE)
-		.choices(
-			IdType.ipv4,
-			IdType.ipv6,
-			IdType.mac)
-		.help("the type of the identifier");
-	parser.addArgument("identifier")
-		.type(String.class)
-		.dest(KEY_IDENTIFIER)
-		.help("the identifier");
+			.type(IdType.class)
+			.dest(KEY_IDENTIFIER_TYPE)
+			.choices(
+				IdType.ipv4,
+				IdType.ipv6,
+				IdType.mac)
+			.help("the type of the identifier");
+		parser.addArgument("identifier")
+			.type(String.class)
+			.dest(KEY_IDENTIFIER)
+			.help("the identifier");
 		parser.addArgument("device")
 			.type(String.class)
 			.dest(KEY_DEV)
