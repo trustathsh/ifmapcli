@@ -38,19 +38,19 @@
  */
 package de.hshannover.f4.trust.ifmapcli;
 
-import java.io.FileNotFoundException;
 import java.io.InputStream;
 
 import javax.net.ssl.TrustManager;
 
+import net.sourceforge.argparse4j.ArgumentParsers;
+import net.sourceforge.argparse4j.inf.ArgumentParser;
+import net.sourceforge.argparse4j.inf.ArgumentParserException;
+import net.sourceforge.argparse4j.inf.Namespace;
 import de.hshannover.f4.trust.ifmapcli.common.Common;
-import de.hshannover.f4.trust.ifmapcli.common.Config;
+import de.hshannover.f4.trust.ifmapcli.common.ParserUtil;
 import de.hshannover.f4.trust.ifmapj.IfmapJ;
 import de.hshannover.f4.trust.ifmapj.IfmapJHelper;
 import de.hshannover.f4.trust.ifmapj.channel.SSRC;
-import de.hshannover.f4.trust.ifmapj.exception.IfmapErrorResult;
-import de.hshannover.f4.trust.ifmapj.exception.IfmapException;
-import de.hshannover.f4.trust.ifmapj.exception.InitializationException;
 
 /**
  * A simple tool that purges a publisher </br>.
@@ -60,60 +60,55 @@ import de.hshannover.f4.trust.ifmapj.exception.InitializationException;
  */
 public class Purge {
 	final static String CMD = "purge";
-	final static int MIN_ARGS = 1;			// me|<some-publisher-id>
-	final static int EXPECTED_ARGS = 6;		// me|<some-publisher-id>
-											// url, user, pass,
-											// keystorePath, keystorePass
 
-	/**
-	 * @param args
-	 */
 	public static void main(String[] args) {
-		String pId;
-		Config cfg;
-		SSRC ssrc;
-		TrustManager[] tms;
-		InputStream is;
+		final String KEY_PUBLISHER_ID = "publisherId";
 
-		// check number of mandatory command line arguments
-		if(args.length < MIN_ARGS){
-			Purge.usage();
-			return;
+		ArgumentParser parser = ArgumentParsers.newArgumentParser(CMD);
+		parser.addArgument("--publisher-id", "-p")
+			.type(String.class)
+			.dest(KEY_PUBLISHER_ID)
+			.help("the publisher id");
+		ParserUtil.addConnectionArgumentsTo(parser);
+		ParserUtil.addCommonArgumentsTo(parser);
+
+		Namespace res = null;
+		try {
+			res = parser.parseArgs(args);
+		} catch (ArgumentParserException e) {
+			parser.handleError(e);
+			System.exit(1);
 		}
 
-		// parse mandatory command line arguments
-		pId = args[0];
-
-		// check and load optional parameters
-		cfg = Common.checkAndLoadParams(args, EXPECTED_ARGS);
-		System.out.println(CMD + " uses config " + cfg);
+		if (res.getBoolean(ParserUtil.VERBOSE)) {
+			StringBuilder sb = new StringBuilder();
+			
+			sb.append(CMD).append(" ");
+			ParserUtil.appendStringIfNotNull(sb, res, KEY_PUBLISHER_ID);
+			
+			ParserUtil.printConnectionArguments(sb, res);
+			System.out.println(sb.toString());
+		}
 
 		// purge
 		try {
-			is = Common.prepareTruststoreIs(cfg.getTruststorePath());
-			tms = IfmapJHelper.getTrustManagers(is, cfg.getTruststorePass());
-			ssrc = IfmapJ.createSSRC(cfg.getUrl(), cfg.getUser(), cfg.getPass(), tms);
+			InputStream is = Common.prepareTruststoreIs(res.getString(ParserUtil.KEYSTORE_PATH));
+			TrustManager[] tms = IfmapJHelper.getTrustManagers(is, res.getString(ParserUtil.KEYSTORE_PASS));
+			SSRC ssrc = IfmapJ.createSSRC(
+				res.getString(ParserUtil.URL),
+				res.getString(ParserUtil.USER),
+				res.getString(ParserUtil.PASS),
+				tms);
 			ssrc.newSession();
-			if(pId.equals("me")){
-				ssrc.purgePublisher();
+			if (res.getString(KEY_PUBLISHER_ID) != null) {
+				ssrc.purgePublisher(res.getString(KEY_PUBLISHER_ID));
 			} else {
-				ssrc.purgePublisher(pId);
+				ssrc.purgePublisher();
 			}
 			ssrc.endSession();
-		} catch (InitializationException e) {
-			System.out.println(e.getDescription() + " " + e.getMessage());
-		} catch (IfmapErrorResult e) {
-			System.out.println(e.getErrorString());
-		} catch (IfmapException e) {
-			System.out.println(e.getDescription() + " " + e.getMessage());
-		} catch (FileNotFoundException e) {
-			System.out.println(e.getMessage());
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.exit(-1);
 		}
-	}
-
-	private static void usage() {
-		System.out.println("usage:\n" +
-				"\t" + Purge.CMD + " me|<some-publisher-id>");
-		System.out.println(Common.USAGE);
 	}
 }
