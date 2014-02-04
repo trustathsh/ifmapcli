@@ -38,7 +38,6 @@
  */
 package de.hshannover.f4.trust.ifmapcli;
 
-import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
@@ -51,27 +50,21 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.GnuParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.OptionBuilder;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
+import net.sourceforge.argparse4j.ArgumentParsers;
+import net.sourceforge.argparse4j.impl.Arguments;
+import net.sourceforge.argparse4j.inf.ArgumentParser;
+import net.sourceforge.argparse4j.inf.ArgumentParserException;
+import net.sourceforge.argparse4j.inf.Namespace;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import de.hshannover.f4.trust.ifmapcli.common.Common;
-import de.hshannover.f4.trust.ifmapcli.common.Config;
+import de.hshannover.f4.trust.ifmapcli.common.ParserUtil;
 import de.hshannover.f4.trust.ifmapj.IfmapJ;
 import de.hshannover.f4.trust.ifmapj.IfmapJHelper;
 import de.hshannover.f4.trust.ifmapj.binding.IfmapStrings;
 import de.hshannover.f4.trust.ifmapj.channel.SSRC;
-import de.hshannover.f4.trust.ifmapj.exception.EndSessionException;
-import de.hshannover.f4.trust.ifmapj.exception.IfmapErrorResult;
-import de.hshannover.f4.trust.ifmapj.exception.IfmapException;
-import de.hshannover.f4.trust.ifmapj.exception.InitializationException;
 import de.hshannover.f4.trust.ifmapj.identifier.Device;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifiers;
 import de.hshannover.f4.trust.ifmapj.identifier.Identity;
@@ -107,85 +100,22 @@ public class FeatureSingle {
 	final static String NAMESPACE = "http://www.esukom.de/2012/ifmap-metadata/1";
 	final static String NAMESPACE_PREFIX = "esukom";
 
-	private SSRC mSsrc;
+	private static String mFullQualifiedInstanceAwareFeatureId;
+	private static FeatureType mType;
+	private static String mValue;
+	private static String mDevice;
+	private static boolean mIsUpdate;
+	private static String mCtxTime;
+	private static String mCtxPos;
+	private static String mCtxOtherDevices;
+	private static boolean mDeleteSubCatMetadata;
 
-	private String mFullQualifiedInstanceAwareFeatureId;
-	private FeatureType mType;
-	private String mValue;
-	private String mDevice;
-	private boolean mIsUpdate;
-	private String mCtxTime;
-	private String mCtxPos;
-	private String mCtxOtherDevices;
-	private boolean mDeleteSubCatMetadata;
+	private static List<PublishElement> mPublishElements = new ArrayList<PublishElement>();
 
+	private static DocumentBuilderFactory mDocumentBuilderFactory;
+	private static DocumentBuilder mDocumentBuilder;
 
-	private List<PublishElement> mPublishElements = new ArrayList<PublishElement>();
-
-	private DocumentBuilderFactory mDocumentBuilderFactory;
-	private DocumentBuilder mDocumentBuilder;
-
-	// CLI options parser stuff ( not the actual input params )
-	Options mOptions;
-
-	Option mFullQualifiedInstanceAwareFeatureIdOp;
-	Option mTypeOp;
-	Option mValueOp;
-	Option mIsUpdateOp;
-	Option mDeviceOp;
-	Option mCtxTimeOp;
-	Option mCtxPosOp;
-	Option mCtxOtherDevicesOp;
-	Option mDeleteSubCateMetadataOp;
-
-	Option mHelpOp;
-
-	// parsed command line options
-	CommandLine mCmdLine;
-
-	// configuration
-	Config mConfig;
-
-	public FeatureSingle(String[] args) throws FileNotFoundException,
-			InitializationException {
-		mConfig = Common.loadEnvParams();
-		System.out.println(CMD + " uses config " + mConfig);
-		parseCommandLine(args);
-		initSsrc();
-
-		mDocumentBuilderFactory = DocumentBuilderFactory.newInstance();
-
-		try {
-			mDocumentBuilder = mDocumentBuilderFactory.newDocumentBuilder();
-		} catch (ParserConfigurationException e) {
-			e.printStackTrace();
-			throw new RuntimeException(e);
-		}
-
-		preparePublishUpdatesOrDeletes();
-	}
-
-	/**
-	 * Create session, start publishing, end session
-	 *
-	 * @throws IfmapErrorResult
-	 * @throws IfmapException
-	 * @throws EndSessionException
-	 */
-	public void start() throws IfmapErrorResult, IfmapException, EndSessionException {
-		mSsrc.newSession();
-
-		PublishRequest req = Requests.createPublishReq();
-
-		for (PublishElement el : mPublishElements) {
-			req.addPublishElement(el);
-		}
-
-		mSsrc.publish(req);
-		mSsrc.endSession();
-	}
-
-	private void preparePublishUpdatesOrDeletes() {
+	private static void preparePublishUpdatesOrDeletes() {
 		PublishElement publishUpdateOrDelete;
 		DummyCategory root = prepareCategoriesAndFeature();
 		String nodeName = root.localId;
@@ -193,7 +123,7 @@ public class FeatureSingle {
 		Identity rootCategory = createCategory(nodeName);
 		Document deviceCategory = createCategoryLink("device-category");
 
-		if(mIsUpdate) {
+		if (mIsUpdate) {
 			publishUpdateOrDelete = Requests.createPublishUpdate(dev, rootCategory, deviceCategory, MetadataLifetime.forever);
 			mPublishElements.add(publishUpdateOrDelete);
 		} else if (mDeleteSubCatMetadata) {
@@ -212,9 +142,9 @@ public class FeatureSingle {
 	 * @param parent
 	 * @param currentDepth
 	 */
-	private void fork(Identity parent, Vector<DummyFeature> features, Vector<DummyCategory> subCategories) {
+	private static void fork(Identity parent, Vector<DummyFeature> features, Vector<DummyCategory> subCategories) {
 
-		HashMap<String, Integer> instanceCounter = new HashMap<String, Integer>();
+//		HashMap<String, Integer> instanceCounter = new HashMap<String, Integer>();
 		PublishElement pEl;
 
 		// add features
@@ -271,11 +201,11 @@ public class FeatureSingle {
 		}
 	}
 
-	private String makeDeleteFilter(DummyFeature df) {
+	private static String makeDeleteFilter(DummyFeature df) {
 		return NAMESPACE_PREFIX + ":feature[id='" + df.localId + "']";
 	}
 
-	private Document createCategoryLink(String name) {
+	private static Document createCategoryLink(String name) {
 		Document doc = mDocumentBuilder.newDocument();
 		Element e = doc.createElementNS(NAMESPACE, NAMESPACE_PREFIX + ":" + name);
 		e.setAttributeNS(null, "ifmap-cardinality", "singleValue");
@@ -284,7 +214,7 @@ public class FeatureSingle {
 		return doc;
 	}
 
-	private Document createFeature(String id, String type, String value) {
+	private static Document createFeature(String id, String type, String value) {
 		Document doc = mDocumentBuilder.newDocument();
 		Element feature = doc.createElementNS(NAMESPACE, NAMESPACE_PREFIX + ":feature");
 
@@ -309,7 +239,7 @@ public class FeatureSingle {
 		return doc;
 	}
 
-	private Identity createCategory(String name) {
+	private static Identity createCategory(String name) {
 		return Identifiers.createIdentity(
 				IdentityType.other,
 				name,
@@ -317,149 +247,139 @@ public class FeatureSingle {
 				OTHER_TYPE_DEFINITION);
 	}
 
-	/**
-	 * parse the command line by using Apache commons-cli
-	 *
-	 * @param args
-	 */
-	private void parseCommandLine(String[] args) {
-		mOptions = new Options();
-		// automatically generate the help statement
-		HelpFormatter formatter = new HelpFormatter();
-		formatter.setWidth(100);
+	public static void main(String[] args) {
+		final String KEY_OPERATION = "publishOperation";
+		final String KEY_PURGE = "purge";
+		final String KEY_FEATURE_ID = "feature-id";
+		final String KEY_FEATURE_TYPE = "feature-type";
+		final String KEY_FEATURE_VALUE = "feature-value";
+		final String KEY_DEVICE_NAME = "device-name";
+		final String KEY_CTX_TIMESTAMP = "ctxp-timestamp";
+		final String KEY_CTX_POSITION = "ctxp-position";
+		final String KEY_CTX_OTHER_DEVICES = "ctxp-other-devices";
 
-		mHelpOp = new Option("h", "help", false, "print this message");
-		mOptions.addOption(mHelpOp);
+		ArgumentParser parser = ArgumentParsers.newArgumentParser(CMD);
+		parser.addArgument("publish-operation")
+			.type(String.class)
+			.dest(KEY_OPERATION)
+			.choices("update", "delete")
+			.help("the publish operation");
+		parser.addArgument("--purge", "-p")
+			.type(Boolean.class)
+			.action(Arguments.storeTrue())
+			.dest(KEY_PURGE)
+			.setDefault(false)
+			.help("purge subcategory-of");
+		parser.addArgument("feature-id")
+			.type(String.class)
+			.dest(KEY_FEATURE_ID)
+			.help("full-qualified instance-aware feature id");
+		parser.addArgument("feature-type")
+			.type(FeatureType.class)
+			.dest(KEY_FEATURE_TYPE)
+			.choices(
+				FeatureType.arbitrary,
+				FeatureType.qualified,
+				FeatureType.quantitive)
+			.help("feature type");
+		parser.addArgument("feature-value")
+			.type(String.class)
+			.dest(KEY_FEATURE_VALUE)
+			.help("feature value");
+		parser.addArgument("device-name")
+			.type(String.class)
+			.dest(KEY_DEVICE_NAME)
+			.help("the device name (also used for adm domain in identity identifiers)");
+		parser.addArgument("--ctxp-timestamp", "-ctxt")
+			.type(String.class)
+			.dest(KEY_CTX_TIMESTAMP)
+			.setDefault(Common.getTimeAsXsdDateTime(new Date()))
+			.help("context: timestamp");
+		parser.addArgument("--ctxp-position", "-ctxp")
+			.type(String.class)
+			.dest(KEY_CTX_POSITION)
+			.setDefault("work")
+			.help("context: position");
+		parser.addArgument("--ctxp-other-devices", "-ctxo")
+			.type(String.class)
+			.dest(KEY_CTX_OTHER_DEVICES)
+			.setDefault("none")
+			.help("context: other devices");
+		ParserUtil.addConnectionArgumentsTo(parser);
+		ParserUtil.addCommonArgumentsTo(parser);
 
-		mDeleteSubCateMetadataOp = new Option("p", "purge subcategory-of", false, "delete subcategory-of metadata");
-		mOptions.addOption(mDeleteSubCateMetadataOp);
-
-		OptionBuilder.isRequired(false);
-		OptionBuilder.withDescription("is update?");
-		mIsUpdateOp = OptionBuilder.create("u");
-		mOptions.addOption(mIsUpdateOp);
-
-		OptionBuilder.hasArg();
-		OptionBuilder.isRequired();
-		OptionBuilder.withArgName("fqiafi");
-		OptionBuilder.withType(String.class);
-		OptionBuilder.withDescription("full-qualified instance-aware feature id");
-		mFullQualifiedInstanceAwareFeatureIdOp = OptionBuilder.create("i");
-		mOptions.addOption(mFullQualifiedInstanceAwareFeatureIdOp);
-
-		OptionBuilder.hasArg();
-		OptionBuilder.isRequired();
-		OptionBuilder.withArgName("type");
-		OptionBuilder.withType(FeatureType.class);
-		OptionBuilder.withDescription("arbitrary|quantitive|qualified");
-		mTypeOp = OptionBuilder.create("t");
-		mOptions.addOption(mTypeOp);
-
-		OptionBuilder.hasArg();
-		OptionBuilder.isRequired();
-		OptionBuilder.withArgName("value");
-		OptionBuilder.withType(String.class);
-		OptionBuilder.withDescription("feature value");
-		mValueOp = OptionBuilder.create("v");
-		mOptions.addOption(mValueOp);
-
-		OptionBuilder.hasArg();
-		OptionBuilder.isRequired();
-		OptionBuilder.withArgName("dev");
-		OptionBuilder.withType(String.class);
-		OptionBuilder.withDescription("the device name (also used for adm domain in identity identifiers)");
-		mDeviceOp = OptionBuilder.create("d");
-		mOptions.addOption(mDeviceOp);
-
-		OptionBuilder.hasArg();
-		OptionBuilder.withArgName("ctxp-timestamp");
-		OptionBuilder.withDescription("ctxp-timestamp");
-		mCtxTimeOp = OptionBuilder.create("ctxt");
-		mOptions.addOption(mCtxTimeOp);
-
-		OptionBuilder.hasArg();
-		OptionBuilder.withArgName("ctxp-position");
-		OptionBuilder.withDescription("ctxp-position");
-		mCtxPosOp = OptionBuilder.create("ctxp");
-		mOptions.addOption(mCtxPosOp);
-
-		OptionBuilder.hasArg();
-		OptionBuilder.withArgName("ctxp-other-devices");
-		OptionBuilder.withDescription("ctxp-other-devices");
-		mCtxOtherDevicesOp = OptionBuilder.create("ctxo");
-		mOptions.addOption(mCtxOtherDevicesOp);
-
-		// create the parser
-		CommandLineParser parser = new GnuParser();
+		Namespace res = null;
 		try {
-			// parse the command line arguments
-			mCmdLine = parser.parse(mOptions, args);
-
-			mFullQualifiedInstanceAwareFeatureId = mCmdLine.getOptionValue(mFullQualifiedInstanceAwareFeatureIdOp.getOpt());
-			mType = Enum.valueOf(FeatureType.class, mCmdLine.getOptionValue(mTypeOp.getOpt()));
-			mValue = mCmdLine.getOptionValue(mValueOp.getOpt());
-			mIsUpdate = mCmdLine.hasOption(mIsUpdateOp.getOpt()) ? true : false;
-			mDevice = mCmdLine.getOptionValue(mDeviceOp.getOpt());
-
-			mCtxTime = mCmdLine.getOptionValue(mCtxTimeOp.getOpt(), Common.getTimeAsXsdDateTime(new Date()));
-			mCtxPos = mCmdLine.getOptionValue(mCtxPosOp.getOpt(), "work");
-			mCtxOtherDevices = mCmdLine.getOptionValue(mCtxOtherDevicesOp.getOpt(), "none");
-
-			mDeleteSubCatMetadata = mCmdLine.hasOption(mDeleteSubCateMetadataOp.getOpt());
-
-		} catch (ParseException exp) {
-			// oops, something went wrong
-			System.err.println("Parsing failed.  Reason: " + exp.getMessage());
-			formatter.printHelp(FeatureSingle.CMD, mOptions);
-			System.out.println(Common.USAGE);
+			res = parser.parseArgs(args);
+		} catch (ArgumentParserException e) {
+			parser.handleError(e);
 			System.exit(1);
 		}
-	}
 
-	/**
-	 * Load {@link TrustManager} instances and create {@link SSRC}.
-	 *
-	 * @throws FileNotFoundException
-	 * @throws InitializationException
-	 */
-	private void initSsrc() throws FileNotFoundException,
-			InitializationException {
-		InputStream is = Common
-				.prepareTruststoreIs(mConfig.getTruststorePath());
-		TrustManager[] tms = IfmapJHelper.getTrustManagers(is,
-				mConfig.getTruststorePass());
-		mSsrc = IfmapJ.createSSRC(mConfig.getUrl(), mConfig.getUser(),
-				mConfig.getPass(), tms);
-	}
+		if (res.getBoolean(ParserUtil.VERBOSE)) {
+			StringBuilder sb = new StringBuilder();
+			
+			sb.append(CMD).append(" ");
+			sb.append(res.getString(KEY_OPERATION)).append(" ");
+			sb.append(KEY_FEATURE_ID).append("=").append(res.getString(KEY_FEATURE_ID)).append(" ");
+			sb.append(KEY_FEATURE_TYPE).append("=").append(res.get(KEY_FEATURE_TYPE)).append(" ");
+			sb.append(KEY_FEATURE_VALUE).append("=").append(res.getString(KEY_FEATURE_VALUE)).append(" ");
+			sb.append(KEY_DEVICE_NAME).append("=").append(res.getString(KEY_DEVICE_NAME)).append(" ");
+			sb.append(KEY_CTX_TIMESTAMP).append("=").append(res.getString(KEY_CTX_TIMESTAMP)).append(" ");
+			sb.append(KEY_CTX_POSITION).append("=").append(res.getString(KEY_CTX_POSITION)).append(" ");
+			sb.append(KEY_CTX_OTHER_DEVICES).append("=").append(res.getString(KEY_CTX_OTHER_DEVICES)).append(" ");
+			
+			ParserUtil.printConnectionArguments(sb, res);
+			System.out.println(sb.toString());
+		}
 
-	public static void main(String[] args) {
-		System.out.println("FeatureSingle");
+		mFullQualifiedInstanceAwareFeatureId = res.getString(KEY_FEATURE_ID);
+		mType = res.get(KEY_FEATURE_TYPE);
+		mValue = res.getString(KEY_FEATURE_VALUE);
+		mIsUpdate = res.getString(KEY_OPERATION).equals("update") ? true : false;
+		mDevice = res.getString(KEY_DEVICE_NAME);
+
+		mCtxTime = res.getString(KEY_CTX_TIMESTAMP);
+		mCtxPos = res.getString(KEY_CTX_POSITION);
+		mCtxOtherDevices = res.getString(KEY_CTX_OTHER_DEVICES);
+
+		mDeleteSubCatMetadata = res.getBoolean(KEY_PURGE);
+		
+		mDocumentBuilderFactory = DocumentBuilderFactory.newInstance();
 
 		try {
-			FeatureSingle p = new FeatureSingle(args);
-			p.start();
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
+			mDocumentBuilder = mDocumentBuilderFactory.newDocumentBuilder();
+		} catch (ParserConfigurationException e) {
 			e.printStackTrace();
-		} catch (InitializationException e) {
-			// TODO Auto-generated catch block
+			throw new RuntimeException(e);
+		}
+
+		preparePublishUpdatesOrDeletes();
+		
+		try {
+			InputStream is = Common.prepareTruststoreIs(res.getString(ParserUtil.KEYSTORE_PATH));
+			TrustManager[] tms = IfmapJHelper.getTrustManagers(is, res.getString(ParserUtil.KEYSTORE_PASS));
+			SSRC ssrc = IfmapJ.createSSRC(
+				res.getString(ParserUtil.URL),
+				res.getString(ParserUtil.USER),
+				res.getString(ParserUtil.PASS),
+				tms);
+			ssrc.newSession();
+			PublishRequest req = Requests.createPublishReq();
+			
+			for (PublishElement el : mPublishElements) {
+				req.addPublishElement(el);
+			}
+			
+			ssrc.publish(req);
+			ssrc.endSession();
+		} catch (Exception e) {
 			e.printStackTrace();
-		} catch (IfmapErrorResult e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IfmapException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (EndSessionException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.exit(-1);
 		}
 	}
 
-	/**
-	 *
-	 */
-	private DummyCategory prepareCategoriesAndFeature(){
+	private static DummyCategory prepareCategoriesAndFeature(){
 		DummyCategory root = null;
 		DummyCategory node = null;
 		DummyCategory parent = null;
@@ -489,8 +409,7 @@ public class FeatureSingle {
 		return root;
 	}
 
-
-	private class DummyCategory {
+	private static class DummyCategory {
 		String localId;
 		Vector<DummyCategory> subCategories;
 		Vector<DummyFeature> features;
@@ -510,10 +429,9 @@ public class FeatureSingle {
 		void addDummyFeature(DummyFeature df){
 			features.add(df);
 		}
-
 	}
 
-	private class DummyFeature {
+	private static class DummyFeature {
 		String localId;
 		FeatureType type;
 		String value;
@@ -523,27 +441,11 @@ public class FeatureSingle {
 			this.type = type;
 			this.value = value;
 		}
-
 	}
 
 	private enum FeatureType {
 		quantitive,
 		qualified,
 		arbitrary;
-
-//		quantitive("quantitive"),
-//		qualified("qualified"),
-//		arbitrary("arbitrary");
-//
-//		private FeatureType(String name) {
-//			this.name = name;
-//		}
-//
-//		private final String name;
-//
-//		@Override
-//		public String toString() {
-//			return name;
-//		}
 	}
 }
