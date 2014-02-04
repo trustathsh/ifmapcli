@@ -38,31 +38,23 @@
  */
 package de.hshannover.f4.trust.ifmapcli;
 
-import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.ArrayList;
 
 import javax.net.ssl.TrustManager;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.GnuParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.OptionBuilder;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
+import net.sourceforge.argparse4j.ArgumentParsers;
+import net.sourceforge.argparse4j.inf.ArgumentParser;
+import net.sourceforge.argparse4j.inf.ArgumentParserException;
+import net.sourceforge.argparse4j.inf.Namespace;
+
 import org.w3c.dom.Document;
 
 import de.hshannover.f4.trust.ifmapcli.common.Common;
-import de.hshannover.f4.trust.ifmapcli.common.Config;
+import de.hshannover.f4.trust.ifmapcli.common.ParserUtil;
 import de.hshannover.f4.trust.ifmapj.IfmapJ;
 import de.hshannover.f4.trust.ifmapj.IfmapJHelper;
 import de.hshannover.f4.trust.ifmapj.channel.SSRC;
-import de.hshannover.f4.trust.ifmapj.exception.EndSessionException;
-import de.hshannover.f4.trust.ifmapj.exception.IfmapErrorResult;
-import de.hshannover.f4.trust.ifmapj.exception.IfmapException;
-import de.hshannover.f4.trust.ifmapj.exception.InitializationException;
 import de.hshannover.f4.trust.ifmapj.identifier.Device;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifiers;
 import de.hshannover.f4.trust.ifmapj.identifier.Identity;
@@ -88,215 +80,127 @@ import de.hshannover.f4.trust.ifmapj.metadata.StandardIfmapMetadataFactory;
  */
 public class Perf1 {
 
-	final static String CMD = "perf1";
-	static int counter = 0;
+	private final static String CMD = "perf1";
+	private static int counter = 0;
 
-	private SSRC mSsrc;
-	private StandardIfmapMetadataFactory mMetaFac = IfmapJ
+	private static StandardIfmapMetadataFactory metaFac = IfmapJ
 			.createStandardMetadataFactory();
-	private Device mRootNode = Identifiers.createDev("parentNode");
-	private Document mAuthBy = mMetaFac.createAuthBy();
-	private ArrayList<PublishRequest> mPublishRequests = new ArrayList<PublishRequest>(
-			1000);
 
-	private int mSizeSprint;
-	private int mNumberOfSprints;
-	private int mNumberRequests;
-	private int mNumberUpdates;
+	public static void main(String[] args) {
+		
+		long maxBytes = Runtime.getRuntime().maxMemory();
+		System.out.println("Max memory: " + maxBytes / 1024 / 1024 + "M");
+		
+		final String KEY_NUMBER_REQUESTS = "requests";
+		final String KEY_NUMBER_UPDATES = "updates";
+		final String KEY_NUMBER_SPRINTS = "sprint-size";
 
-	// CLI options parser stuff ( not the actual input params )
-	Options mOptions;
-	Option mNumRequestsOp;
-	Option mNumUpdatesOp;
-	Option mSizeSprintOp;
-	Option mNameOp;
-	Option mHelpOp;
+		ArgumentParser parser = ArgumentParsers.newArgumentParser(CMD);
+		parser.addArgument("requests")
+			.type(Integer.class)
+			.dest(KEY_NUMBER_REQUESTS)
+			.help("number of publish requests");
+		parser.addArgument("updates")
+			.type(Integer.class)
+			.dest(KEY_NUMBER_UPDATES)
+			.help("number of update elements per request");
+		parser.addArgument("sprint-size")
+			.type(Integer.class)
+			.dest(KEY_NUMBER_SPRINTS)
+			.help("size of one sprint");
+		ParserUtil.addConnectionArgumentsTo(parser);
+		ParserUtil.addCommonArgumentsTo(parser);
 
-	// parsed command line options
-	CommandLine mCmdLine;
-
-	// configuration
-	Config mConfig;
-
-	public Perf1(String[] args) throws FileNotFoundException,
-			InitializationException {
-		mConfig = Common.loadEnvParams();
-		System.out.println(CMD + " uses config " + mConfig);
-		parseCommandLine(args);
-		initSsrc();
-		preparePublishRequests();
-	}
-
-	/**
-	 * Create session, start publishing, end session
-	 *
-	 * @throws IfmapErrorResult
-	 * @throws IfmapException
-	 * @throws EndSessionException
-	 */
-	public void start() throws IfmapErrorResult, IfmapException, EndSessionException {
-		mSsrc.newSession();
-
-		long start = System.currentTimeMillis();
-
-		for (int i = 0; i < mNumberOfSprints; i++) {
-			System.out.print("Do publish sprint " + i);
-			long startSprint = System.currentTimeMillis();
-			for (int j = i * mSizeSprint; j < (i * mSizeSprint) + mSizeSprint; j++) {
-				PublishRequest pr = mPublishRequests.get(j);
-				mSsrc.publish(pr);
-			}
-			long endSprint = System.currentTimeMillis();
-			System.out.print(" done! -> ");
-			System.out.println("Duration: " + (endSprint - startSprint) + "ms");
+		Namespace res = null;
+		try {
+			res = parser.parseArgs(args);
+		} catch (ArgumentParserException e) {
+			parser.handleError(e);
+			System.exit(1);
 		}
 
-		long end = System.currentTimeMillis();
-		System.out.println("Total Duration: " + (end - start) + "ms");
+		if (res.getBoolean(ParserUtil.VERBOSE)) {
+			StringBuilder sb = new StringBuilder();
+			
+			sb.append(CMD).append(" ");
+			ParserUtil.appendIntegerIfNotNull(sb, res, KEY_NUMBER_REQUESTS);
+			ParserUtil.appendIntegerIfNotNull(sb, res, KEY_NUMBER_UPDATES);
+			ParserUtil.appendIntegerIfNotNull(sb, res, KEY_NUMBER_SPRINTS);
+			
+			ParserUtil.printConnectionArguments(sb, res);
+			System.out.println(sb.toString());
+		}
 
-		mSsrc.endSession();
-	}
-
-	/**
-	 *
-	 */
-	private void preparePublishRequests() {
+		int numberRequests = res.getInt(KEY_NUMBER_REQUESTS);
+		int numberUpdates = res.getInt(KEY_NUMBER_UPDATES);
+		int sizeSprint = res.getInt(KEY_NUMBER_SPRINTS);
+		
+		int numberOfSprints;
+		if (sizeSprint > numberRequests){
+			// there is only one sprint
+			numberOfSprints = 1;
+			sizeSprint = numberRequests;
+		} else {
+			numberOfSprints = numberRequests / sizeSprint;
+		}
+		
 		PublishRequest pr;
 		PublishUpdate pu;
 		Identity id;
+		
+		Device rootNode = Identifiers.createDev("parentNode");
+		Document authBy = metaFac.createAuthBy();
+		ArrayList<PublishRequest> publishRequests = new ArrayList<PublishRequest>(1000);
 
 		// create a certain number of publish requests
-		for (int i = 0; i < mNumberRequests; i++) {
+		for (int i = 0; i < numberRequests; i++) {
 			pr = Requests.createPublishReq();
 			// create a certain number of publish updates
-			for (int j = 0; j < mNumberUpdates; j++) {
+			for (int j = 0; j < numberUpdates; j++) {
 				pu = Requests.createPublishUpdate();
 				// generate new Identifier
 				id = Identifiers.createIdentity(IdentityType.userName,
 						new Integer(Perf1.counter++).toString());
-				pu.setIdentifier1(mRootNode);
+				pu.setIdentifier1(rootNode);
 				pu.setIdentifier2(id);
-				pu.addMetadata(mAuthBy);
+				pu.addMetadata(authBy);
 				pr.addPublishElement(pu);
 			}
-			mPublishRequests.add(pr);
+			publishRequests.add(pr);
 		}
-
-	}
-
-	/**
-	 * parse the command line by using Apache commons-cli
-	 *
-	 * @param args
-	 */
-	private void parseCommandLine(String[] args) {
-		mOptions = new Options();
-		// automatically generate the help statement
-		HelpFormatter formatter = new HelpFormatter();
-		formatter.setWidth(100);
-
-		// boolean options
-		mHelpOp = new Option("h", "help", false, "print this message");
-		mOptions.addOption(mHelpOp);
-
-		// argument options
-		// number of requests
-		OptionBuilder.hasArg();
-		OptionBuilder.isRequired();
-		OptionBuilder.withArgName("requests");
-		OptionBuilder.withType(Integer.class);
-		OptionBuilder.withDescription("number of publish requests");
-		mNumRequestsOp = OptionBuilder.create("r");
-		mOptions.addOption(mNumRequestsOp);
-
-		// update operations per request
-		OptionBuilder.hasArg();
-		OptionBuilder.isRequired();
-		OptionBuilder.withArgName("updates");
-		OptionBuilder.withDescription("number of update elements per request");
-		mNumUpdatesOp = OptionBuilder.create("u");
-		mOptions.addOption(mNumUpdatesOp);
-
-		// requests per sprint
-		OptionBuilder.hasArg();
-		OptionBuilder.isRequired();
-		OptionBuilder.withArgName("sprint size");
-		OptionBuilder.withType(Integer.class);
-		OptionBuilder.withDescription("size of one sprint");
-		mSizeSprintOp = OptionBuilder.create("s");
-		mOptions.addOption(mSizeSprintOp);
-
-		// create the parser
-		CommandLineParser parser = new GnuParser();
+		
+		InputStream is;
 		try {
-			// parse the command line arguments
-			mCmdLine = parser.parse(mOptions, args);
+			is = Common.prepareTruststoreIs(res.getString(ParserUtil.KEYSTORE_PATH));
+			TrustManager[] tms = IfmapJHelper.getTrustManagers(is, res.getString(ParserUtil.KEYSTORE_PASS));
+			SSRC ssrc = IfmapJ.createSSRC(
+					res.getString(ParserUtil.URL),
+					res.getString(ParserUtil.USER),
+					res.getString(ParserUtil.PASS),
+					tms);
+			ssrc.newSession();
 
-			mNumberRequests = new Integer(mCmdLine.getOptionValue(mNumRequestsOp
-					.getOpt())).intValue();
-			mNumberUpdates = new Integer(mCmdLine.getOptionValue(mNumUpdatesOp
-					.getOpt())).intValue();
-			mSizeSprint = new Integer(mCmdLine.getOptionValue(mSizeSprintOp
-					.getOpt())).intValue();
-			if (mSizeSprint > mNumberRequests){
-				// there is only one sprint
-				mNumberOfSprints = 1;
-				mSizeSprint = mNumberRequests;
-			} else {
-				mNumberOfSprints = mNumberRequests / mSizeSprint;
+			long start = System.currentTimeMillis();
+
+			for (int i = 0; i < numberOfSprints; i++) {
+				System.out.print("Do publish sprint " + i);
+				long startSprint = System.currentTimeMillis();
+				for (int j = i * sizeSprint; j < (i * sizeSprint) + sizeSprint; j++) {
+					pr = publishRequests.get(j);
+					ssrc.publish(pr);
+				}
+				long endSprint = System.currentTimeMillis();
+				System.out.print(" done! -> ");
+				System.out.println("Duration: " + (endSprint - startSprint) + "ms");
 			}
 
-		} catch (ParseException exp) {
-			// oops, something went wrong
-			System.err.println("Parsing failed.  Reason: " + exp.getMessage());
-			formatter
-					.printHelp(
-							Perf1.CMD
-									+ " -r <number of requests> -u <number of updates per requests> ",
-							mOptions);
-			System.out.println(Common.USAGE);
-			System.exit(1);
-		}
-	}
+			long end = System.currentTimeMillis();
+			System.out.println("Total Duration: " + (end - start) + "ms");
 
-	/**
-	 * Load {@link TrustManager} instances and create {@link SSRC}.
-	 *
-	 * @throws FileNotFoundException
-	 * @throws InitializationException
-	 */
-	private void initSsrc() throws FileNotFoundException,
-			InitializationException {
-		InputStream is = Common
-				.prepareTruststoreIs(mConfig.getTruststorePath());
-		TrustManager[] tms = IfmapJHelper.getTrustManagers(is,
-				mConfig.getTruststorePass());
-		mSsrc = IfmapJ.createSSRC(mConfig.getUrl(), mConfig.getUser(),
-				mConfig.getPass(), tms);
-	}
-
-	public static void main(String[] args) {
-		System.out.println("perf1");
-		long maxBytes = Runtime.getRuntime().maxMemory();
-		System.out.println("Max memory: " + maxBytes / 1024 / 1024 + "M");
-		try {
-			Perf1 p = new Perf1(args);
-			p.start();
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
+			ssrc.endSession();
+		} catch (Exception e) {
 			e.printStackTrace();
-		} catch (InitializationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IfmapErrorResult e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IfmapException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (EndSessionException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.exit(-1);
 		}
 	}
 }
