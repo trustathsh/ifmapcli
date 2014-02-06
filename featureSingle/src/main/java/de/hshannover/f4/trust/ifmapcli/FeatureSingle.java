@@ -39,7 +39,6 @@
 package de.hshannover.f4.trust.ifmapcli;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Vector;
 
@@ -47,14 +46,14 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import de.hshannover.f4.trust.ifmapcli.common.AbstractClient;
-import de.hshannover.f4.trust.ifmapcli.common.Common;
+import de.hshannover.f4.trust.ifmapcli.common.ParserUtil;
+import de.hshannover.f4.trust.ifmapcli.common.enums.FeatureType;
 import de.hshannover.f4.trust.ifmapj.binding.IfmapStrings;
 import de.hshannover.f4.trust.ifmapj.channel.SSRC;
 import de.hshannover.f4.trust.ifmapj.identifier.Device;
@@ -240,73 +239,25 @@ public class FeatureSingle extends AbstractClient {
 	public static void main(String[] args) {
 		command = "featureSingle";
 		
-		final String KEY_OPERATION = "publishOperation";
-		final String KEY_PURGE = "purge";
-		final String KEY_FEATURE_ID = "feature-id";
-		final String KEY_FEATURE_TYPE = "feature-type";
-		final String KEY_FEATURE_VALUE = "feature-value";
-		final String KEY_DEVICE_NAME = "device-name";
-		final String KEY_CTX_TIMESTAMP = "ctxp-timestamp";
-		final String KEY_CTX_POSITION = "ctxp-position";
-		final String KEY_CTX_OTHER_DEVICES = "ctxp-other-devices";
-
 		ArgumentParser parser = createDefaultParser();
-		parser.addArgument("publish-operation")
-			.type(String.class)
-			.dest(KEY_OPERATION)
-			.choices("update", "delete")
-			.help("the publish operation");
-		parser.addArgument("--purge", "-p")
-			.type(Boolean.class)
-			.action(Arguments.storeTrue())
-			.dest(KEY_PURGE)
-			.setDefault(false)
-			.help("purge subcategory-of");
-		parser.addArgument("feature-id")
-			.type(String.class)
-			.dest(KEY_FEATURE_ID)
-			.help("full-qualified instance-aware feature id");
-		parser.addArgument("feature-type")
-			.type(FeatureType.class)
-			.dest(KEY_FEATURE_TYPE)
-			.choices(
-				FeatureType.arbitrary,
-				FeatureType.qualified,
-				FeatureType.quantitive)
-			.help("feature type");
-		parser.addArgument("feature-value")
-			.type(String.class)
-			.dest(KEY_FEATURE_VALUE)
-			.help("feature value");
-		parser.addArgument("device-name")
-			.type(String.class)
-			.dest(KEY_DEVICE_NAME)
-			.help("the device name (also used for adm domain in identity identifiers)");
-		parser.addArgument("--ctxp-timestamp", "-ctxt")
-			.type(String.class)
-			.dest(KEY_CTX_TIMESTAMP)
-			.setDefault(Common.getTimeAsXsdDateTime(new Date()))
-			.help("context: timestamp");
-		parser.addArgument("--ctxp-position", "-ctxp")
-			.type(String.class)
-			.dest(KEY_CTX_POSITION)
-			.setDefault("work")
-			.help("context: position");
-		parser.addArgument("--ctxp-other-devices", "-ctxo")
-			.type(String.class)
-			.dest(KEY_CTX_OTHER_DEVICES)
-			.setDefault("none")
-			.help("context: other devices");
+		ParserUtil.addPublishOperation(parser);
+		ParserUtil.addFeatureId(parser);
+		ParserUtil.addFeatureType(parser);
+		ParserUtil.addFeatureValue(parser);
+		ParserUtil.addFeatureTargetDevice(parser);
+		ParserUtil.addFeatureContextTimestamp(parser);
+		ParserUtil.addFeatureContextPosition(parser);
+		ParserUtil.addFeatureContextOtherDevices(parser);
 		
 		parseParameters(parser, args);
 		
-		printParameters(KEY_OPERATION, new String[] {KEY_FEATURE_ID, KEY_FEATURE_TYPE, KEY_FEATURE_VALUE, KEY_DEVICE_NAME, KEY_CTX_TIMESTAMP, KEY_CTX_POSITION, KEY_CTX_OTHER_DEVICES});
+		printParameters(KEY_OPERATION, new String[] {KEY_FEATURE_ID, KEY_FEATURE_TYPE, KEY_FEATURE_VALUE, KEY_TARGET_DEVICE, KEY_CTX_TIMESTAMP, KEY_CTX_POSITION, KEY_CTX_OTHER_DEVICES});
 
 		mFullQualifiedInstanceAwareFeatureId = resource.getString(KEY_FEATURE_ID);
 		mType = resource.get(KEY_FEATURE_TYPE);
 		mValue = resource.getString(KEY_FEATURE_VALUE);
 		mIsUpdate = resource.getString(KEY_OPERATION).equals("update") ? true : false;
-		mDevice = resource.getString(KEY_DEVICE_NAME);
+		mDevice = resource.getString(KEY_TARGET_DEVICE);
 
 		mCtxTime = resource.getString(KEY_CTX_TIMESTAMP);
 		mCtxPos = resource.getString(KEY_CTX_POSITION);
@@ -376,13 +327,13 @@ public class FeatureSingle extends AbstractClient {
 		String localId;
 		Vector<DummyCategory> subCategories;
 		Vector<DummyFeature> features;
-		boolean isMultiCard;
+//		boolean isMultiCard;
 
 		DummyCategory(String localId, boolean isMultiCard) {
 			this.localId = localId;
 			this.subCategories = new Vector<DummyCategory>();
 			this.features = new Vector<DummyFeature>();
-			this.isMultiCard = isMultiCard;
+//			this.isMultiCard = isMultiCard;
 		}
 
 		void addSubCategory(DummyCategory dc){
@@ -406,9 +357,4 @@ public class FeatureSingle extends AbstractClient {
 		}
 	}
 
-	private enum FeatureType {
-		quantitive,
-		qualified,
-		arbitrary;
-	}
 }

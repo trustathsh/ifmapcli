@@ -43,6 +43,8 @@ import net.sourceforge.argparse4j.inf.ArgumentParser;
 import org.w3c.dom.Document;
 
 import de.hshannover.f4.trust.ifmapcli.common.AbstractClient;
+import de.hshannover.f4.trust.ifmapcli.common.ParserUtil;
+import de.hshannover.f4.trust.ifmapcli.common.enums.IdType;
 import de.hshannover.f4.trust.ifmapj.binding.IfmapStrings;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifier;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifiers;
@@ -65,41 +67,19 @@ public class DiscBy extends AbstractClient {
 	public static void main(String[] args) {
 		command = "disc-by";
 		
-		final String KEY_OPERATION = "publishOperation";
-		final String KEY_IDENTIFIER = "identifier";
-		final String KEY_IDENTIFIER_TYPE = "identifierType";
-		final String KEY_DEV = "device";
-
 		ArgumentParser parser = createDefaultParser();
-		parser.addArgument("publish-operation")
-			.type(String.class)
-			.dest(KEY_OPERATION)
-			.choices("update", "delete")
-			.help("the publish operation");
-		parser.addArgument("identifier-type")
-			.type(IdType.class)
-			.dest(KEY_IDENTIFIER_TYPE)
-			.choices(
-				IdType.ipv4,
-				IdType.ipv6,
-				IdType.mac)
-			.help("the type of the identifier");
-		parser.addArgument("identifier")
-			.type(String.class)
-			.dest(KEY_IDENTIFIER)
-			.help("the identifier");
-		parser.addArgument("device")
-			.type(String.class)
-			.dest(KEY_DEV)
-			.help("name of the device identifier");
+		ParserUtil.addPublishOperation(parser);
+		ParserUtil.addIdentifierType(parser, IdType.ipv4, IdType.ipv6, IdType.mac);
+		ParserUtil.addIdentifier(parser);
+		ParserUtil.addDevice(parser);
 
 		parseParameters(parser, args);
 		
-		printParameters(KEY_OPERATION, new String[] {KEY_IDENTIFIER_TYPE, KEY_IDENTIFIER, KEY_DEV});
+		printParameters(KEY_OPERATION, new String[] {KEY_IDENTIFIER_TYPE, KEY_IDENTIFIER, KEY_DEVICE});
 		
 		IdType identifierType = resource.get(KEY_IDENTIFIER_TYPE);
 		String identifierName = resource.getString(KEY_IDENTIFIER);
-		String dev = resource.getString(KEY_DEV);
+		String dev = resource.getString(KEY_DEVICE);
 		
 		// prepare identifiers
 		Identifier identifier = getIdentifier(identifierType, identifierName);

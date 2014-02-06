@@ -43,6 +43,8 @@ import net.sourceforge.argparse4j.inf.ArgumentParser;
 import org.w3c.dom.Document;
 
 import de.hshannover.f4.trust.ifmapcli.common.AbstractClient;
+import de.hshannover.f4.trust.ifmapcli.common.ParserUtil;
+import de.hshannover.f4.trust.ifmapcli.common.enums.IdType;
 import de.hshannover.f4.trust.ifmapj.binding.IfmapStrings;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifier;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifiers;
@@ -64,94 +66,31 @@ public class DevChar extends AbstractClient {
 	public static void main(String[] args) {
 		command = "dev-char";
 		
-		final String KEY_OPERATION = "publishOperation";
-		final String KEY_IDENTIFIER = "identifier";
-		final String KEY_IDENTIFIER_TYPE = "identifierType";
-		final String KEY_DEV = "device";
-		
-		final String KEY_MANUFACTURER = "manufacturer";
-		final String KEY_MODEL = "manufacturer";
-		final String KEY_OS = "os";
-		final String KEY_OS_VERSION = "os-version";
-		final String KEY_DEVICE_TYPE = "device-type";
-		final String KEY_DISCOVERED_TIME = "discoverer-time";
-		final String KEY_DISCOVERER_ID = "discoverer-id";
-		final String KEY_DISCOVERY_METHOD = "discovery-method";
-		
-
 		ArgumentParser parser = createDefaultParser();
-		parser.addArgument("publish-operation")
-			.type(String.class)
-			.dest(KEY_OPERATION)
-			.choices("update", "delete")
-			.help("the publish operation");
-		parser.addArgument("identifier-type")
-			.type(IdType.class)
-			.dest(KEY_IDENTIFIER_TYPE)
-			.choices(
-				IdType.ipv4,
-				IdType.ipv6,
-				IdType.mac,
-				IdType.ar)
-			.help("the type of the identifier");
-		parser.addArgument("identifier")
-			.type(String.class)
-			.dest(KEY_IDENTIFIER)
-			.help("the identifier");		
-		parser.addArgument("device")
-			.type(String.class)
-			.dest(KEY_DEV)
-			.help("name of the device identifier");
-
-		// characteristics (min=0, max=1)
-		parser.addArgument("--manufacturer")
-			.type(String.class)
-			.dest(KEY_MANUFACTURER)
-			.help("manufacturer of the device");
-		parser.addArgument("--os")
-			.type(String.class)
-			.dest(KEY_OS)
-			.help("OS of the device");
-		parser.addArgument("--os-version")
-			.type(String.class)
-			.dest(KEY_OS_VERSION)
-			.help("OS version of the device");
-
-		// characteristics (min=0, max=unbounded)
-		parser.addArgument("--device-type")
-			.type(String.class)
-			.dest(KEY_DEVICE_TYPE)
-			.help("device type");
-		
-		// characteristics (min=1, max=1)
-		parser.addArgument("discoverer-time")
-			.type(String.class)
-			.dest(KEY_DISCOVERED_TIME)
-			.help("time of discovery");
-		parser.addArgument("discoverer-id")
-			.type(String.class)
-			.dest(KEY_DISCOVERER_ID)
-			.help("ID of discoverer");
-		
-		// characteristics (min=1, max=unbounded)
-		// TODO allow more than one argument
-		parser.addArgument("discovery-method")
-			.type(String.class)
-			.dest(KEY_DISCOVERY_METHOD)
-			.help("method of discovery");
+		ParserUtil.addPublishOperation(parser);
+		ParserUtil.addIdentifierType(parser, IdType.ipv4, IdType.ipv6, IdType.mac, IdType.ar);
+		ParserUtil.addDevice(parser);		
+		ParserUtil.addManufacturer(parser);
+		ParserUtil.addModel(parser);
+		ParserUtil.addOs(parser);
+		ParserUtil.addOsVersion(parser);
+		ParserUtil.addDeviceType(parser);
+		ParserUtil.addDiscoveredTime(parser);
+		ParserUtil.addDiscovererId(parser);
+		ParserUtil.addDiscoveryMethod(parser);
 
 		parseParameters(parser, args);
 		
-		printParameters(KEY_OPERATION, new String[] {KEY_IDENTIFIER_TYPE, KEY_IDENTIFIER, KEY_DEV,
+		printParameters(KEY_OPERATION, new String[] {KEY_IDENTIFIER_TYPE, KEY_IDENTIFIER, KEY_DEVICE,
 				KEY_MANUFACTURER, KEY_MODEL, KEY_OS, KEY_OS_VERSION, KEY_DEVICE_TYPE,
-				KEY_DISCOVERED_TIME, KEY_DISCOVERER_ID, KEY_DISCOVERY_METHOD});
+				KEY_CHARACTERISTIC_DISCOVERED_TIME, KEY_CHARACTERISTIC_DISCOVERER_ID, KEY_CHARACTERISTIC_DISCOVERY_METHOD});
 
 		IdType identifierType = resource.get(KEY_IDENTIFIER_TYPE);
 		String identifierName = resource.getString(KEY_IDENTIFIER);
 		Identifier identifier = getIdentifier(identifierType, identifierName);
 		
 		// prepare identifiers
-		Identifier devIdentifier = Identifiers.createDev(resource.getString(KEY_DEV));
+		Identifier devIdentifier = Identifiers.createDev(resource.getString(KEY_DEVICE));
 
 		// prepare metadata
 		String manufacturer = resource.getString(KEY_MANUFACTURER);
@@ -159,9 +98,9 @@ public class DevChar extends AbstractClient {
 		String os = resource.getString(KEY_OS);
 		String osVersion = resource.getString(KEY_OS_VERSION);
 		String deviceType = resource.getString(KEY_DEVICE_TYPE);
-		String discovererTime = resource.getString(KEY_DISCOVERED_TIME);
-		String discovererId = resource.getString(KEY_DISCOVERER_ID);
-		String discoveryMethod = resource.getString(KEY_DISCOVERY_METHOD);
+		String discovererTime = resource.getString(KEY_CHARACTERISTIC_DISCOVERED_TIME);
+		String discovererId = resource.getString(KEY_CHARACTERISTIC_DISCOVERER_ID);
+		String discoveryMethod = resource.getString(KEY_CHARACTERISTIC_DISCOVERY_METHOD);
 		
 		Document metadata = mf.createDevChar(manufacturer, model, os, osVersion, deviceType, discovererTime, discovererId, discoveryMethod);
 

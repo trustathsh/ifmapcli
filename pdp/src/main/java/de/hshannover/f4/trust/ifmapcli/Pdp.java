@@ -48,6 +48,7 @@ import org.w3c.dom.Document;
 
 import de.hshannover.f4.trust.ifmapcli.common.AbstractClient;
 import de.hshannover.f4.trust.ifmapcli.common.Common;
+import de.hshannover.f4.trust.ifmapcli.common.ParserUtil;
 import de.hshannover.f4.trust.ifmapj.binding.IfmapStrings;
 import de.hshannover.f4.trust.ifmapj.channel.SSRC;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifier;
@@ -378,38 +379,20 @@ public class Pdp extends AbstractClient {
 	public static void main(String[] args) {
 		command = "pdp";
 		
-		final String KEY_OPERATION = "publishOperation";
-		final String KEY_IP = "ip-address";
-		final String KEY_MAC = "mac-address";
-		final String KEY_ID = "username";
-
 		ArgumentParser parser = createDefaultParser();
-		parser.addArgument("publish-operation")
-			.type(String.class)
-			.dest(KEY_OPERATION)
-			.choices("update", "delete")
-			.help("the publish operation");
-		parser.addArgument("ip-address")
-			.type(String.class)
-			.dest(KEY_IP)
-			.help("value of the ip-address identifier");
-		parser.addArgument("mac-address")
-			.type(String.class)
-			.dest(KEY_MAC)
-			.help("value of the mac identifier");
-		parser.addArgument("username")
-			.type(String.class)
-			.dest(KEY_ID)
-			.help("username value of the identity identifier");
+		ParserUtil.addPublishOperation(parser);
+		ParserUtil.addIpv4Address(parser);
+		ParserUtil.addMacAddress(parser);
+		ParserUtil.addUsernameIdentity(parser);
 
 		parseParameters(parser, args);
 
-		printParameters(KEY_OPERATION, new String[] {KEY_IP, KEY_MAC, KEY_ID});
+		printParameters(KEY_OPERATION, new String[] {KEY_IP, KEY_MAC, KEY_IDENTITY_USERNAME});
 		
 		isUpdate = isUpdate(KEY_OPERATION);
 		ip = resource.getString(KEY_IP);
 		mac = resource.getString(KEY_MAC);
-		username = resource.getString(KEY_ID);
+		username = resource.getString(KEY_IDENTITY_USERNAME);
 		
 		publishRequest = Requests.createPublishReq();
 		publish();

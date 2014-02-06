@@ -43,6 +43,7 @@ import net.sourceforge.argparse4j.inf.ArgumentParser;
 import org.w3c.dom.Document;
 
 import de.hshannover.f4.trust.ifmapcli.common.AbstractClient;
+import de.hshannover.f4.trust.ifmapcli.common.ParserUtil;
 import de.hshannover.f4.trust.ifmapj.binding.IfmapStrings;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifier;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifiers;
@@ -66,31 +67,17 @@ public class AuthAs extends AbstractClient {
 	public static void main(String[] args) {
 		command = "auth-as";
 		
-		final String KEY_OPERATION = "publishOperation";
-		final String KEY_AR = "accessRequest";
-		final String KEY_ID = "username";
-
 		ArgumentParser parser = createDefaultParser();
-		parser.addArgument("publish-operation")
-			.type(String.class)
-			.dest(KEY_OPERATION)
-			.choices("update", "delete")
-			.help("the publish operation");
-		parser.addArgument("access-request")
-			.type(String.class)
-			.dest(KEY_AR)
-			.help("name of the access-request identifier");
-		parser.addArgument("username")
-			.type(String.class)
-			.dest(KEY_ID)
-			.help("username value of the identity identifier");
+		ParserUtil.addPublishOperation(parser);
+		ParserUtil.addAccessRequest(parser);
+		ParserUtil.addUsernameIdentity(parser);
 
 		parseParameters(parser, args);
 		
-		printParameters(KEY_OPERATION, new String[] {KEY_AR, KEY_ID});
+		printParameters(KEY_OPERATION, new String[] {KEY_ACCESS_REQUEST, KEY_IDENTITY_USERNAME});
 
-		String ar = resource.getString(KEY_AR);
-		String id = resource.getString(KEY_ID);
+		String ar = resource.getString(KEY_ACCESS_REQUEST);
+		String id = resource.getString(KEY_IDENTITY_USERNAME);
 
 		// prepare identifiers
 		Identifier arIdentifier = Identifiers.createAr(ar);

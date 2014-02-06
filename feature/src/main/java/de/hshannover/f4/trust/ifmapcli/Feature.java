@@ -52,6 +52,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import de.hshannover.f4.trust.ifmapcli.common.AbstractClient;
+import de.hshannover.f4.trust.ifmapcli.common.ParserUtil;
 import de.hshannover.f4.trust.ifmapj.channel.SSRC;
 import de.hshannover.f4.trust.ifmapj.identifier.Device;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifiers;
@@ -230,34 +231,17 @@ public class Feature extends AbstractClient {
 	public static void main(String[] args) {
 		command = "feature";
 		
-		final String KEY_DEV = "target-device";
-		final String KEY_DEPTH = "depth";
-		final String KEY_MAX_CHILDS = "max-childs-per-category";
-		final String KEY_MAX_FEATURES = "max-features-per-category";
-
 		ArgumentParser parser = createDefaultParser();
-		parser.addArgument("target-device")
-			.type(String.class)
-			.dest(KEY_DEV)
-			.help("the target device identifier");
-		parser.addArgument("tree-depth")
-			.type(Integer.class)
-			.dest(KEY_DEPTH)
-			.help("depth of the feature tree");
-		parser.addArgument("max-childs")
-			.type(Integer.class)
-			.dest(KEY_MAX_CHILDS)
-			.help("max childs per category");
-		parser.addArgument("max-features")
-			.type(Integer.class)
-			.dest(KEY_MAX_FEATURES)
-			.help("max features per category");
+		ParserUtil.addFeatureTargetDevice(parser);
+		ParserUtil.addFeatureTreeDepth(parser);
+		ParserUtil.addFeatureMaxChilds(parser);
+		ParserUtil.addFeatureMaxFeatures(parser);
 
 		parseParameters(parser, args);
 
-		printParameters(new String[] {KEY_DEV, KEY_DEPTH, KEY_MAX_CHILDS, KEY_MAX_FEATURES});
+		printParameters(new String[] {KEY_TARGET_DEVICE, KEY_DEPTH, KEY_MAX_CHILDS, KEY_MAX_FEATURES});
 		
-		deviceIdentifier = resource.getString(KEY_DEV);
+		deviceIdentifier = resource.getString(KEY_TARGET_DEVICE);
 		treeDepth = resource.getInt(KEY_DEPTH);
 		maxChildsPerCategory = resource.getInt(KEY_MAX_CHILDS);
 		maxFeaturePerCategory = resource.getInt(KEY_MAX_FEATURES);

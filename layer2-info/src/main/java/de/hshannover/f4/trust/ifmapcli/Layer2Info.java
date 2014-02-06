@@ -43,6 +43,7 @@ import net.sourceforge.argparse4j.inf.ArgumentParser;
 import org.w3c.dom.Document;
 
 import de.hshannover.f4.trust.ifmapcli.common.AbstractClient;
+import de.hshannover.f4.trust.ifmapcli.common.ParserUtil;
 import de.hshannover.f4.trust.ifmapj.binding.IfmapStrings;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifier;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifiers;
@@ -65,54 +66,24 @@ public class Layer2Info extends AbstractClient {
 	public static void main(String[] args) {
 		command = "layer2-info";
 		
-		final String KEY_OPERATION = "publishOperation";
-		final String KEY_AR = "accessRequest";
-		final String KEY_DEV = "device";
-		final String KEY_VLAN_NUMBER = "vlan-number";
-		final String KEY_VLAN_NAME = "vlan-name";
-		final String KEY_PORT = "port";
-		final String KEY_ADMINISTRATIVE_DOMAIN ="administrative-domain";
-
 		ArgumentParser parser = createDefaultParser();
-		parser.addArgument("publish-operation")
-			.type(String.class)
-			.dest(KEY_OPERATION)
-			.choices("update", "delete")
-			.help("the publish operation");
-		parser.addArgument("access-request")
-			.type(String.class)
-			.dest(KEY_AR)
-			.help("name of the access-request identifier");
-		parser.addArgument("device")
-			.type(String.class)
-			.dest(KEY_DEV)
-			.help("name of the device identifier");
-		parser.addArgument("--vlan-number")
-			.type(Integer.class)
-			.dest(KEY_VLAN_NUMBER)
-			.help("vlan number");
-		parser.addArgument("--vlan-name")
-			.type(String.class)
-			.dest(KEY_VLAN_NAME)
-			.help("vlan name");
-		parser.addArgument("--port")
-			.type(Integer.class)
-			.dest(KEY_PORT)
-			.help("port");
-		parser.addArgument("--administrative-domain")
-			.type(String.class)
-			.dest(KEY_ADMINISTRATIVE_DOMAIN)
-			.help("value of the administrative domain");
+		ParserUtil.addPublishOperation(parser);
+		ParserUtil.addAccessRequest(parser);
+		ParserUtil.addDevice(parser);
+		ParserUtil.addVlanNumber(parser);
+		ParserUtil.addVlanName(parser);
+		ParserUtil.addPort(parser);
+		ParserUtil.addAdministrativeDomain(parser);
 		
 		parseParameters(parser, args);
 		
-		printParameters(KEY_OPERATION, new String[] {KEY_AR, KEY_DEV, KEY_VLAN_NUMBER, KEY_VLAN_NAME, KEY_PORT, KEY_ADMINISTRATIVE_DOMAIN});
+		printParameters(KEY_OPERATION, new String[] {KEY_ACCESS_REQUEST, KEY_DEVICE, KEY_VLAN_NUMBER, KEY_VLAN_NAME, KEY_PORT, KEY_ADMINISTRATIVE_DOMAIN});
 	
-		String ar = resource.getString(KEY_AR);
-		String dev = resource.getString(KEY_DEV);
-		int vlanNumber = resource.getInt(KEY_VLAN_NUMBER);
+		String ar = resource.getString(KEY_ACCESS_REQUEST);
+		String dev = resource.getString(KEY_DEVICE);
+		Integer vlanNumber = resource.getInt(KEY_VLAN_NUMBER);
 		String vlanName = resource.getString(KEY_VLAN_NAME);
-		int port = resource.getInt(KEY_PORT);
+		Integer port = resource.getInt(KEY_PORT);
 		String administrativeDomain = resource.getString(KEY_ADMINISTRATIVE_DOMAIN);
 		
 		// prepare identifiers

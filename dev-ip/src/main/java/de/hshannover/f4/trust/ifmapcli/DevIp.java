@@ -43,6 +43,7 @@ import net.sourceforge.argparse4j.inf.ArgumentParser;
 import org.w3c.dom.Document;
 
 import de.hshannover.f4.trust.ifmapcli.common.AbstractClient;
+import de.hshannover.f4.trust.ifmapcli.common.ParserUtil;
 import de.hshannover.f4.trust.ifmapj.binding.IfmapStrings;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifier;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifiers;
@@ -64,30 +65,16 @@ public class DevIp extends AbstractClient {
 	public static void main(String[] args) {
 		command = "dev-ip";
 		
-		final String KEY_OPERATION = "publishOperation";
-		final String KEY_DEV = "device";
-		final String KEY_IP = "ip-address";
-
 		ArgumentParser parser = createDefaultParser();
-		parser.addArgument("publish-operation")
-			.type(String.class)
-			.dest(KEY_OPERATION)
-			.choices("update", "delete")
-			.help("the publish operation");
-		parser.addArgument("device")
-			.type(String.class)
-			.dest(KEY_DEV)
-			.help("name of the device identifier");
-		parser.addArgument("ip-address")
-			.type(String.class)
-			.dest(KEY_IP)
-			.help("value of the ip-address identifier");
+		ParserUtil.addPublishOperation(parser);
+		ParserUtil.addDevice(parser);
+		ParserUtil.addIpv4Address(parser);
 
 		parseParameters(parser, args);
 		
-		printParameters(KEY_OPERATION, new String[] {KEY_DEV, KEY_IP});
+		printParameters(KEY_OPERATION, new String[] {KEY_DEVICE, KEY_IP});
 		
-		String device = resource.getString(KEY_DEV);
+		String device = resource.getString(KEY_DEVICE);
 		String ip = resource.getString(KEY_IP);
 		
 		// prepare identifiers

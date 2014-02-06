@@ -43,6 +43,8 @@ import net.sourceforge.argparse4j.inf.ArgumentParser;
 import org.w3c.dom.Document;
 
 import de.hshannover.f4.trust.ifmapcli.common.AbstractClient;
+import de.hshannover.f4.trust.ifmapcli.common.ParserUtil;
+import de.hshannover.f4.trust.ifmapcli.common.enums.IdType;
 import de.hshannover.f4.trust.ifmapj.binding.IfmapStrings;
 import de.hshannover.f4.trust.ifmapj.channel.SSRC;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifier;
@@ -65,35 +67,12 @@ public class ReqInv extends AbstractClient {
 	public static void main(String[] args) {
 		command = "req-inv";
 		
-		final String KEY_OPERATION = "publishOperation";
-		final String KEY_DEVICE = "device";
-		final String KEY_OTHER_IDENTIFIER_TYPE = "other-identifier-type";
-		final String KEY_OTHER_IDENTIFIER = "other-identifier";
-		final String KEY_QUALIFIER = "qualifier";
-
 		ArgumentParser parser = createDefaultParser();
-		parser.addArgument("publish-operation")
-			.type(String.class)
-			.dest(KEY_OPERATION)
-			.choices("update", "delete")
-			.help("the publish operation");
-		parser.addArgument(KEY_DEVICE)
-			.type(String.class)
-			.dest(KEY_DEVICE)
-			.help("the name of the device identifier");
-		parser.addArgument(KEY_OTHER_IDENTIFIER_TYPE)
-			.type(IdType.class)
-			.dest(KEY_OTHER_IDENTIFIER_TYPE)
-			.choices(IdType.ipv4, IdType.ipv6, IdType.mac)
-			.help("the type of the other identifier");
-		parser.addArgument(KEY_OTHER_IDENTIFIER)
-			.type(String.class)
-			.dest(KEY_OTHER_IDENTIFIER)
-			.help("the name of the other identifier");
-		parser.addArgument("--qualifier")
-			.type(String.class)
-			.dest(KEY_QUALIFIER)
-			.help("the qualifier for the request-for-investigation");
+		ParserUtil.addPublishOperation(parser);
+		ParserUtil.addDevice(parser);
+		ParserUtil.addOtherIdentifierType(parser, IdType.ipv4, IdType.ipv6, IdType.mac);
+		ParserUtil.addOtherIdentifier(parser);
+		ParserUtil.addQualifier(parser);
 
 		parseParameters(parser, args);
 		

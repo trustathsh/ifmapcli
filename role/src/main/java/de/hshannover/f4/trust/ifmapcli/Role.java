@@ -43,6 +43,7 @@ import net.sourceforge.argparse4j.inf.ArgumentParser;
 import org.w3c.dom.Document;
 
 import de.hshannover.f4.trust.ifmapcli.common.AbstractClient;
+import de.hshannover.f4.trust.ifmapcli.common.ParserUtil;
 import de.hshannover.f4.trust.ifmapj.binding.IfmapStrings;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifier;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifiers;
@@ -65,41 +66,19 @@ public class Role extends AbstractClient {
 	public static void main(String[] args) {
 		command = "role";
 
-		final String KEY_OPERATION = "publishOperation";
-		final String KEY_AR = "accessRequest";
-		final String KEY_ID = "username";
-		final String KEY_ROLE = "role";
-		final String KEY_ADMINISTRATIVE_DOMAIN = "administrative-domain";
-
 		ArgumentParser parser = createDefaultParser();
-		parser.addArgument("publish-operation")
-			.type(String.class)
-			.dest(KEY_OPERATION)
-			.choices("update", "delete")
-			.help("the publish operation");
-		parser.addArgument("access-request")
-			.type(String.class)
-			.dest(KEY_AR)
-			.help("name of the access-request identifier");
-		parser.addArgument("username")
-			.type(String.class)
-			.dest(KEY_ID)
-			.help("username value of the identity identifier");
-		parser.addArgument("role")
-			.type(String.class)
-			.dest(KEY_ROLE)
-			.help("value of the role metadatum");
-		parser.addArgument("--administrative-domain")
-			.type(String.class)
-			.dest(KEY_ADMINISTRATIVE_DOMAIN)
-			.help("value of the administrative domain");
+		ParserUtil.addPublishOperation(parser);
+		ParserUtil.addAccessRequest(parser);
+		ParserUtil.addUsernameIdentity(parser);
+		ParserUtil.addRole(parser);
+		ParserUtil.addAdministrativeDomain(parser);
 
 		parseParameters(parser, args);
 		
-		printParameters(KEY_OPERATION, new String[] {KEY_AR, KEY_ID, KEY_ROLE, KEY_ADMINISTRATIVE_DOMAIN});
+		printParameters(KEY_OPERATION, new String[] {KEY_ACCESS_REQUEST, KEY_IDENTITY_USERNAME, KEY_ROLE, KEY_ADMINISTRATIVE_DOMAIN});
 		
-		String ar = resource.getString(KEY_AR);
-		String id = resource.getString(KEY_ID);
+		String ar = resource.getString(KEY_ACCESS_REQUEST);
+		String id = resource.getString(KEY_IDENTITY_USERNAME);
 		String role = resource.getString(KEY_ROLE);
 		String administrativeDomain = resource.getString(KEY_ADMINISTRATIVE_DOMAIN);
 		

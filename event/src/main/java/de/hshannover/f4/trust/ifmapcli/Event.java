@@ -40,13 +40,15 @@ package de.hshannover.f4.trust.ifmapcli;
 
 import java.util.Date;
 
-import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
 
 import org.w3c.dom.Document;
 
 import de.hshannover.f4.trust.ifmapcli.common.AbstractClient;
 import de.hshannover.f4.trust.ifmapcli.common.Common;
+import de.hshannover.f4.trust.ifmapcli.common.ParserUtil;
+import de.hshannover.f4.trust.ifmapcli.common.enums.EventType;
+import de.hshannover.f4.trust.ifmapcli.common.enums.IdType;
 import de.hshannover.f4.trust.ifmapj.binding.IfmapStrings;
 import de.hshannover.f4.trust.ifmapj.channel.SSRC;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifier;
@@ -70,110 +72,48 @@ import de.hshannover.f4.trust.ifmapj.metadata.Significance;
  */
 public class Event extends AbstractClient {
 
-	enum EventType {
-		p2p, cve, botnet_infection, worm_infection, excessive_flows, behavioral_change, policy_violation, other
-	}
-
 	public static void main(String[] args) {
 		command = "event";
-
-		final String KEY_OPERATION = "publishOperation";
-		final String KEY_IDENTIFIER = "identifier";
-		final String KEY_IDENTIFIER_TYPE = "identifierType";
-		final String KEY_NAME = "name";
-
-		// TODO add discovered-time
-		// final String KEY_DISCOVERED_TIME = "discovered-time";
-		final String KEY_DISCOVERER_ID = "discoverer-id";
-		final String KEY_MAGNITUDE = "magnitude";
-		final String KEY_CONFIDENCE = "confidence";
-		final String KEY_SIGNIFICANCE = "significance";
-		final String KEY_TYPE = "type";
-		final String KEY_OTHERTYPE_DEFINITION = "other-type-definition";
-		final String KEY_INFORMATION = "information";
-		final String KEY_VULNERABILITY_URI = "vulnerability-uri";
-
+		
 		ArgumentParser parser = createDefaultParser();
-		parser.addArgument("publish-operation").type(String.class)
-				.dest(KEY_OPERATION).choices("update", "delete", "notify")
-				.help("the publish operation");
-		parser.addArgument("identifier-type")
-				.type(IdType.class)
-				.dest(KEY_IDENTIFIER_TYPE)
-				.choices(IdType.ipv4, IdType.ipv6, IdType.mac, IdType.dev,
-						IdType.ar, IdType.id)
-				.help("the type of the identifier");
-		parser.addArgument("identifier").type(String.class)
-				.dest(KEY_IDENTIFIER).help("the identifier");
+		ParserUtil.addPublishOperationWithNotify(parser);
+		ParserUtil.addIdentifierType(parser, IdType.ipv4, IdType.ipv6, IdType.mac, IdType.dev, IdType.ar, IdType.id);
+		ParserUtil.addIdentifier(parser);
+		
 		// event content
-		parser.addArgument("name").type(String.class).dest(KEY_NAME)
-				.help("the name of the event");
-
-		// TODO add discovered-time
-		// parser.addArgument(KEY_DISCOVERED_TIME)
-		// .type(String.class)
-		// .dest(KEY_DISCOVERED_TIME)
-		// .setDefault(new Date())
-		// .help("detection time of the event, default is now");
-		parser.addArgument("--discoverer-id").type(String.class)
-				.dest(KEY_DISCOVERER_ID).setDefault("ifmapj")
-				.help("the discoverer-id of the event");
-		parser.addArgument("--magnitude").type(Integer.class)
-				.dest(KEY_MAGNITUDE).setDefault(0)
-				.choices(Arguments.range(0, 100))
-				.help("the magnitude of the event");
-		parser.addArgument("--confidence").type(Integer.class)
-				.dest(KEY_CONFIDENCE).setDefault(0)
-				.choices(Arguments.range(0, 100))
-				.help("the confidence for the event");
-		parser.addArgument("--significance")
-				.type(Significance.class)
-				.setDefault(Significance.informational)
-				.choices(Significance.critical, Significance.important,
-						Significance.informational)
-				.dest(KEY_SIGNIFICANCE)
-				.help("the significance of the event");
-		parser.addArgument("--type")
-				.type(EventType.class)
-				.choices(EventType.p2p, EventType.cve,
-						EventType.botnet_infection, EventType.worm_infection,
-						EventType.excessive_flows, EventType.behavioral_change,
-						EventType.policy_violation, EventType.other)
-				.dest(KEY_TYPE).setDefault(EventType.other)
-				.help("the type of the event");
-		parser.addArgument("--other-type-def").type(String.class)
-				.dest(KEY_OTHERTYPE_DEFINITION)
-				.help("other-type-definition of the event");
-		parser.addArgument("--information").type(String.class)
-				.dest(KEY_INFORMATION)
-				.help("\"human consumable\" informational string");
-		parser.addArgument("--vulnerability-uri").type(String.class)
-				.dest(KEY_VULNERABILITY_URI)
-				.help("URI of the CVE if type cve is used");
-
+		ParserUtil.addEventName(parser);
+		ParserUtil.addEventDiscovererId(parser);
+		ParserUtil.addEventMagnitude(parser);
+		ParserUtil.addEventConfidence(parser);
+		ParserUtil.addEventSignificance(parser);
+		ParserUtil.addEventType(parser);
+		ParserUtil.addEventOtherTypeDefinition(parser);
+		ParserUtil.addEventInformation(parser);
+		ParserUtil.addEventVulnerabilityUri(parser);
+		
 		parseParameters(parser, args);
 
-		printParameters(KEY_OPERATION, new String[] {KEY_IDENTIFIER_TYPE, KEY_IDENTIFIER, KEY_NAME,
-				KEY_DISCOVERER_ID, KEY_MAGNITUDE, KEY_CONFIDENCE, KEY_SIGNIFICANCE, KEY_TYPE,
-				KEY_OTHERTYPE_DEFINITION, KEY_INFORMATION, KEY_VULNERABILITY_URI});
+		printParameters(KEY_OPERATION, new String[] {KEY_IDENTIFIER_TYPE, KEY_IDENTIFIER, KEY_EVENT_NAME,
+				KEY_EVENT_DISCOVERER_ID, KEY_MAGNITUDE, KEY_CONFIDENCE, KEY_SIGNIFICANCE, KEY_EVENT_TYPE,
+				KEY_EVENT_OTHERTYPE_DEFINITION, KEY_INFORMATION, KEY_VULNERABILITY_URI});
 
 		IdType identifierType = resource.get(KEY_IDENTIFIER_TYPE);
 		String identifierName = resource.getString(KEY_IDENTIFIER);
 		Identifier identifier = getIdentifier(identifierType, identifierName);
 
-		EventType eventType = resource.get(KEY_TYPE);
+		EventType eventType = resource.get(KEY_EVENT_TYPE);
 		Significance eventSignificance = resource.get(KEY_SIGNIFICANCE);
 		Document event = mf.createEvent(
-				resource.getString(KEY_NAME),
+				resource.getString(KEY_EVENT_NAME),
 				Common.getTimeAsXsdDateTime(new Date()), // TODO add
 															// discovered-time
 															// to argument
 															// parser
-				resource.getString(KEY_DISCOVERER_ID),
+				resource.getString(KEY_CHARACTERISTIC_DISCOVERER_ID),
 				resource.getInt(KEY_MAGNITUDE),
 				resource.getInt(KEY_CONFIDENCE), eventSignificance,
 				ifmapjEventTypeFrom(eventType),
-				resource.getString(KEY_OTHERTYPE_DEFINITION),
+				resource.getString(KEY_EVENT_OTHERTYPE_DEFINITION),
 				resource.getString(KEY_INFORMATION),
 				resource.getString(KEY_VULNERABILITY_URI));
 
@@ -196,7 +136,7 @@ public class Event extends AbstractClient {
 				// TODO expand filter string to all event attributes
 				String filter = String.format(
 						"meta:event[@ifmap-publisher-id='%s' and name='%s']",
-						ssrc.getPublisherId(), resource.getString(KEY_NAME));
+						ssrc.getPublisherId(), resource.getString(KEY_EVENT_NAME));
 
 				PublishDelete publishDelete = Requests.createPublishDelete(
 						identifier, filter);

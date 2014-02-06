@@ -40,6 +40,8 @@ package de.hshannover.f4.trust.ifmapcli;
 
 import net.sourceforge.argparse4j.inf.ArgumentParser;
 import de.hshannover.f4.trust.ifmapcli.common.AbstractClient;
+import de.hshannover.f4.trust.ifmapcli.common.ParserUtil;
+import de.hshannover.f4.trust.ifmapcli.common.enums.IdType;
 import de.hshannover.f4.trust.ifmapj.binding.IfmapStrings;
 import de.hshannover.f4.trust.ifmapj.channel.SSRC;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifier;
@@ -63,61 +65,16 @@ public class Search extends AbstractClient {
 	public static void main(String[] args) {
 		command = "search";
 		
-		final String KEY_IDENTIFIER = "identifier";
-		final String KEY_IDENTIFIER_TYPE = "identifierType";
-		final String KEY_MATCH_LINKS = "matchLinks";
-		final String KEY_MAX_DEPTH = "maxDepth";
-		final String KEY_MAX_SIZE = "maxSize";
-		final String KEY_RESULT_FILTER = "resultFilter";
-		final String KEY_TERMINAL_IDENTIFIER_TYPE = "terminal-identifier-type";
-		final String KEY_NAMESPACE_PREFIX = "namespacePrefix";
-		final String KEY_NAMESPACE_URI = "namespaceUri";
-
 		ArgumentParser parser = createDefaultParser();
-		parser.addArgument("identifier-type")
-			.type(IdType.class)
-			.dest(KEY_IDENTIFIER_TYPE)
-			.choices(
-				IdType.ipv4,
-				IdType.ipv6,
-				IdType.mac,
-				IdType.dev,
-				IdType.ar,
-				IdType.id)
-				.help("the type of the identifier");
-		parser.addArgument("identifier")
-			.type(String.class)
-			.dest(KEY_IDENTIFIER)
-			.help("the identifier");
-		parser.addArgument("--match-links", "-ml")
-			.type(String.class)
-			.dest(KEY_MATCH_LINKS)
-			.help("filter for match-links, example: meta:ip-mac. (default is match-all)");
-		parser.addArgument("--max-depth", "-md")
-			.type(Integer.class)
-			.dest(KEY_MAX_DEPTH)
-			.setDefault(0)
-			.help("maximum depth for search.");
-		parser.addArgument("--max-size", "-ms")
-			.type(Integer.class)
-			.dest(KEY_MAX_SIZE)
-			.help("maximum size for search results. (default is based on MAPS)");
-		parser.addArgument("--result-filter", "-rf")
-			.type(String.class)
-			.dest(KEY_RESULT_FILTER)
-			.help("result-filter for search results, example: meta:ip-mac (default is match-all).");
-		parser.addArgument("--terminal-identifier-type", "-tt")
-			.type(String.class)
-			.dest(KEY_TERMINAL_IDENTIFIER_TYPE)
-			.help("comma-separated type of the terminal identifier(s): ip-address,mac-address,device,access-request,identity");
-		parser.addArgument("--namespace-prefix", "-np")
-			.type(String.class)
-			.dest(KEY_NAMESPACE_PREFIX)
-			.help("custom namespace prefix, example: foo");
-		parser.addArgument("--namespace-uri", "-nu")
-			.type(String.class)
-			.dest(KEY_NAMESPACE_URI)
-			.help("custom namespace URI. example: http://www.foo.bar/2012/ifmap-metadata/1");
+		ParserUtil.addIdentifierType(parser, IdType.ipv4, IdType.ipv6, IdType.mac, IdType.dev, IdType.ar, IdType.id);
+		ParserUtil.addIdentifier(parser);
+		ParserUtil.addMatchLinks(parser);
+		ParserUtil.addMaxDepth(parser);
+		ParserUtil.addMaxSize(parser);
+		ParserUtil.addResultFilter(parser);
+		ParserUtil.addTerminalIdentifierType(parser);
+		ParserUtil.addNamespacePrefix(parser);
+		ParserUtil.addNamespaceUri(parser);
 
 		parseParameters(parser, args);
 		

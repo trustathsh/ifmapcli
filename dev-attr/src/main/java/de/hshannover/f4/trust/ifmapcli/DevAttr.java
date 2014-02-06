@@ -43,6 +43,7 @@ import net.sourceforge.argparse4j.inf.ArgumentParser;
 import org.w3c.dom.Document;
 
 import de.hshannover.f4.trust.ifmapcli.common.AbstractClient;
+import de.hshannover.f4.trust.ifmapcli.common.ParserUtil;
 import de.hshannover.f4.trust.ifmapj.binding.IfmapStrings;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifier;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifiers;
@@ -64,36 +65,18 @@ public class DevAttr extends AbstractClient {
 	public static void main(String[] args) {
 		command = "dev-attr";
 		
-		final String KEY_OPERATION = "publishOperation";
-		final String KEY_AR = "accessRequest";
-		final String KEY_DEV = "device";
-		final String KEY_ATTR = "device-attribute";
-
 		ArgumentParser parser = createDefaultParser();
-		parser.addArgument("publish-operation")
-			.type(String.class)
-			.dest(KEY_OPERATION)
-			.choices("update", "delete")
-			.help("the publish operation");
-		parser.addArgument("access-request")
-			.type(String.class)
-			.dest(KEY_AR)
-			.help("name of the access-request identifier");
-		parser.addArgument("device")
-			.type(String.class)
-			.dest(KEY_DEV)
-			.help("name of the device identifier");
-		parser.addArgument("device-attribute")
-			.type(String.class)
-			.dest(KEY_ATTR)
-			.help("value of the device-attribute metadatum");
+		ParserUtil.addPublishOperation(parser);
+		ParserUtil.addAccessRequest(parser);
+		ParserUtil.addDevice(parser);
+		ParserUtil.addDeviceAttribute(parser);
 		
 		parseParameters(parser, args);
 		
-		printParameters(KEY_OPERATION, new String[] {KEY_AR, KEY_DEV, KEY_ATTR});
+		printParameters(KEY_OPERATION, new String[] {KEY_ACCESS_REQUEST, KEY_DEVICE, KEY_ATTR});
 		
-		String ar = resource.getString(KEY_AR);
-		String dev = resource.getString(KEY_DEV);
+		String ar = resource.getString(KEY_ACCESS_REQUEST);
+		String dev = resource.getString(KEY_DEVICE);
 		String attr = resource.getString(KEY_ATTR);
 
 		// prepare identifiers

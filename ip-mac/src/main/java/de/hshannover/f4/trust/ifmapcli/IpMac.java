@@ -46,6 +46,7 @@ import org.w3c.dom.Document;
 
 import de.hshannover.f4.trust.ifmapcli.common.AbstractClient;
 import de.hshannover.f4.trust.ifmapcli.common.Common;
+import de.hshannover.f4.trust.ifmapcli.common.ParserUtil;
 import de.hshannover.f4.trust.ifmapj.binding.IfmapStrings;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifier;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifiers;
@@ -67,25 +68,11 @@ public class IpMac extends AbstractClient {
 	public static void main(String[] args) {
 		command = "ip-mac";
 		
-		final String KEY_OPERATION = "publishOperation";
-		final String KEY_IP = "ipAddress";
-		final String KEY_MAC = "mac";
-
 		// TODO choice for IPv4 and IPv6
 		ArgumentParser parser = createDefaultParser();
-		parser.addArgument("publish-operation")
-			.type(String.class)
-			.dest(KEY_OPERATION)
-			.choices("update", "delete")
-			.help("the publish operation");
-		parser.addArgument("ip-address")
-			.type(String.class)
-			.dest(KEY_IP)
-			.help("value of the ip-address identifier");
-		parser.addArgument("device")
-			.type(String.class)
-			.dest(KEY_MAC)
-			.help("value of the mac identifier");
+		ParserUtil.addPublishOperation(parser);
+		ParserUtil.addIpv4Address(parser);
+		ParserUtil.addMacAddress(parser);
 		// TODO start-time, end-time and dhcp-server name
 
 		parseParameters(parser, args);

@@ -45,6 +45,7 @@ import net.sourceforge.argparse4j.inf.ArgumentParser;
 import org.w3c.dom.Document;
 
 import de.hshannover.f4.trust.ifmapcli.common.AbstractClient;
+import de.hshannover.f4.trust.ifmapcli.common.ParserUtil;
 import de.hshannover.f4.trust.ifmapj.channel.SSRC;
 import de.hshannover.f4.trust.ifmapj.identifier.Device;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifier;
@@ -78,23 +79,10 @@ public class Perf1 extends AbstractClient {
 		long maxBytes = Runtime.getRuntime().maxMemory();
 		System.out.println("Max memory: " + maxBytes / 1024 / 1024 + "M");
 		
-		final String KEY_NUMBER_REQUESTS = "requests";
-		final String KEY_NUMBER_UPDATES = "updates";
-		final String KEY_NUMBER_SPRINTS = "sprint-size";
-
 		ArgumentParser parser = createDefaultParser();
-		parser.addArgument("requests")
-			.type(Integer.class)
-			.dest(KEY_NUMBER_REQUESTS)
-			.help("number of publish requests");
-		parser.addArgument("updates")
-			.type(Integer.class)
-			.dest(KEY_NUMBER_UPDATES)
-			.help("number of update elements per request");
-		parser.addArgument("sprint-size")
-			.type(Integer.class)
-			.dest(KEY_NUMBER_SPRINTS)
-			.help("size of one sprint");
+		ParserUtil.addPerf1NumberRequests(parser);
+		ParserUtil.addPerf1NumberUpdates(parser);
+		ParserUtil.addPerf1NumberSprints(parser);
 
 		parseParameters(parser, args);
 		

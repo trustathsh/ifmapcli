@@ -54,6 +54,7 @@ import org.w3c.dom.Element;
 
 import de.hshannover.f4.trust.ifmapcli.common.AbstractClient;
 import de.hshannover.f4.trust.ifmapcli.common.Common;
+import de.hshannover.f4.trust.ifmapcli.common.ParserUtil;
 import de.hshannover.f4.trust.ifmapj.channel.SSRC;
 import de.hshannover.f4.trust.ifmapj.identifier.Device;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifiers;
@@ -193,19 +194,15 @@ public class Feature2 extends AbstractClient {
 	public static void main(String[] args) {
 		command = "feature2";
 
-		final String KEY_DEV = "target-device";
 
 		ArgumentParser parser = createDefaultParser();
-		parser.addArgument("target-device")
-			.type(String.class)
-			.dest(KEY_DEV)
-			.help("the target device identifier");
+		ParserUtil.addFeatureTargetDevice(parser);
 
 		parseParameters(parser, args);
 
-		printParameters(new String[] {KEY_DEV});
+		printParameters(new String[] {KEY_TARGET_DEVICE});
 		
-		deviceIdentifier = resource.getString(KEY_DEV);
+		deviceIdentifier = resource.getString(KEY_TARGET_DEVICE);
 		
 		try {
 			DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();

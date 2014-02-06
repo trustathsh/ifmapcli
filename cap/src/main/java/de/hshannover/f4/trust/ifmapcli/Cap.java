@@ -43,6 +43,7 @@ import net.sourceforge.argparse4j.inf.ArgumentParser;
 import org.w3c.dom.Document;
 
 import de.hshannover.f4.trust.ifmapcli.common.AbstractClient;
+import de.hshannover.f4.trust.ifmapcli.common.ParserUtil;
 import de.hshannover.f4.trust.ifmapj.binding.IfmapStrings;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifier;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifiers;
@@ -64,35 +65,17 @@ public class Cap extends AbstractClient {
 	public static void main(String[] args) {
 		command = "cap";
 		
-		final String KEY_OPERATION = "publishOperation";
-		final String KEY_AR = "accessRequest";
-		final String KEY_CAP_NAME = "capability";
-		final String KEY_ADMINISTRATIVE_DOMAIN = "administrative-domain";
-
 		ArgumentParser parser = createDefaultParser();
-		parser.addArgument("publish-operation")
-			.type(String.class)
-			.dest(KEY_OPERATION)
-			.choices("update", "delete")
-			.help("the publish operation");
-		parser.addArgument("access-request")
-			.type(String.class)
-			.dest(KEY_AR)
-			.help("name of the access-request identifier");
-		parser.addArgument("capability")
-			.type(String.class)
-			.dest(KEY_CAP_NAME)
-			.help("name of the capability metadatum");
-		parser.addArgument("--administrative-domain")
-			.type(String.class)
-			.dest(KEY_ADMINISTRATIVE_DOMAIN)
-			.help("value of the administrative domain");
+		ParserUtil.addPublishOperation(parser);
+		ParserUtil.addAccessRequest(parser);
+		ParserUtil.addCapability(parser);
+		ParserUtil.addAdministrativeDomain(parser);
 
 		parseParameters(parser, args);
 		
-		printParameters(KEY_OPERATION, new String[] {KEY_AR, KEY_CAP_NAME, KEY_ADMINISTRATIVE_DOMAIN});
+		printParameters(KEY_OPERATION, new String[] {KEY_ACCESS_REQUEST, KEY_CAP_NAME, KEY_ADMINISTRATIVE_DOMAIN});
 
-		String ar = resource.getString(KEY_AR);
+		String ar = resource.getString(KEY_ACCESS_REQUEST);
 		String cap = resource.getString(KEY_CAP_NAME);
 		String administrativeDomain = resource.getString(KEY_ADMINISTRATIVE_DOMAIN);
 

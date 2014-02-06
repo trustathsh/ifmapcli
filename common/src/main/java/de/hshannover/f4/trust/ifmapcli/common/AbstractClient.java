@@ -51,6 +51,7 @@ import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
+import de.hshannover.f4.trust.ifmapcli.common.enums.IdType;
 import de.hshannover.f4.trust.ifmapj.IfmapJ;
 import de.hshannover.f4.trust.ifmapj.IfmapJHelper;
 import de.hshannover.f4.trust.ifmapj.channel.SSRC;
@@ -65,9 +66,89 @@ import de.hshannover.f4.trust.ifmapj.metadata.StandardIfmapMetadataFactory;
 
 public abstract class AbstractClient {
 
-	protected enum IdType {
-		ipv4, ipv6, mac, dev, ar, id
-	}
+	public static final String KEY_OPERATION = "publishOperation";
+	
+	// Identifier
+	public static final String KEY_ACCESS_REQUEST = "accessRequest";
+	public static final String KEY_DEVICE = "device";
+	public static final String KEY_IP = "ip-address";
+	public static final String KEY_MAC = "mac";
+	public static final String KEY_IDENTITY_USERNAME = "username";
+	public static final String KEY_IDENTIFIER = "identifier";
+	public static final String KEY_IDENTIFIER_TYPE = "identifierType";
+	public static final String KEY_OTHER_IDENTIFIER_TYPE = "other-identifier-type";
+	public static final String KEY_OTHER_IDENTIFIER = "other-identifier";
+	
+	// Metadata
+	public static final String KEY_ADMINISTRATIVE_DOMAIN = "administrative-domain";
+	public static final String KEY_ROLE = "role";
+	public static final String KEY_QUALIFIER = "qualifier";
+	public static final String KEY_CAP_NAME = "capability";
+	
+	// device-attribute
+	public static final String KEY_ATTR = "device-attribute";
+	
+	// device-characteristic
+	public static final String KEY_MANUFACTURER = "manufacturer";
+	public static final String KEY_MODEL = "model";
+	public static final String KEY_OS = "os";
+	public static final String KEY_OS_VERSION = "os-version";
+	public static final String KEY_DEVICE_TYPE = "device-type";
+	public static final String KEY_CHARACTERISTIC_DISCOVERED_TIME = "discovered-time";
+	public static final String KEY_CHARACTERISTIC_DISCOVERER_ID = "discoverer-id";
+	public static final String KEY_CHARACTERISTIC_DISCOVERY_METHOD = "discovery-method";
+	
+	// search and subscribe
+	public static final String KEY_MATCH_LINKS = "matchLinks";
+	public static final String KEY_MAX_DEPTH = "maxDepth";
+	public static final String KEY_MAX_SIZE = "maxSize";
+	public static final String KEY_RESULT_FILTER = "resultFilter";
+	public static final String KEY_TERMINAL_IDENTIFIER_TYPE = "terminal-identifier-type";
+	public static final String KEY_NAMESPACE_PREFIX = "namespacePrefix";
+	public static final String KEY_NAMESPACE_URI = "namespaceUri";
+	
+	// purge
+	public static final String KEY_PUBLISHER_ID = "publisherId";
+	
+	// perf1
+	public static final String KEY_NUMBER_REQUESTS = "requests";
+	public static final String KEY_NUMBER_UPDATES = "updates";
+	public static final String KEY_NUMBER_SPRINTS = "sprint-size";
+	
+	// layer-2-information
+	public static final String KEY_VLAN_NUMBER = "vlan-number";
+	public static final String KEY_VLAN_NAME = "vlan-name";
+	public static final String KEY_PORT = "port";
+	
+	// event
+	public static final String KEY_EVENT_NAME = "event-name";
+	// TODO add discovered-time
+	// public static final String KEY_EVENT_DISCOVERED_TIME = "discovered-time";
+	public static final String KEY_EVENT_DISCOVERER_ID = "discoverer-id";
+	public static final String KEY_MAGNITUDE = "magnitude";
+	public static final String KEY_CONFIDENCE = "confidence";
+	public static final String KEY_SIGNIFICANCE = "significance";
+	public static final String KEY_EVENT_TYPE = "type";
+	public static final String KEY_EVENT_OTHERTYPE_DEFINITION = "other-type-definition";
+	public static final String KEY_INFORMATION = "information";
+	public static final String KEY_VULNERABILITY_URI = "vulnerability-uri";
+
+	// feature
+	public static final String KEY_TARGET_DEVICE = "target-device";
+	
+	// feature2
+	public static final String KEY_DEPTH = "depth";
+	public static final String KEY_MAX_CHILDS = "max-childs-per-category";
+	public static final String KEY_MAX_FEATURES = "max-features-per-category";
+	
+	// featureSingle
+	public static final String KEY_PURGE = "purge";
+	public static final String KEY_FEATURE_ID = "feature-id";
+	public static final String KEY_FEATURE_TYPE = "feature-type";
+	public static final String KEY_FEATURE_VALUE = "feature-value";
+	public static final String KEY_CTX_TIMESTAMP = "ctxp-timestamp";
+	public static final String KEY_CTX_POSITION = "ctxp-position";
+	public static final String KEY_CTX_OTHER_DEVICES = "ctxp-other-devices";
 	
 	protected static String command;
 	

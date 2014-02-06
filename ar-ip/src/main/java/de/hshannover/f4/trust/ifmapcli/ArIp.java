@@ -43,6 +43,7 @@ import net.sourceforge.argparse4j.inf.ArgumentParser;
 import org.w3c.dom.Document;
 
 import de.hshannover.f4.trust.ifmapcli.common.AbstractClient;
+import de.hshannover.f4.trust.ifmapcli.common.ParserUtil;
 import de.hshannover.f4.trust.ifmapj.binding.IfmapStrings;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifier;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifiers;
@@ -64,30 +65,16 @@ public class ArIp extends AbstractClient {
 	public static void main(String[] args) {
 		command = "ar-ip";
 		
-		final String KEY_OPERATION = "publishOperation";
-		final String KEY_AR = "accessRequest";
-		final String KEY_IP = "ip-address";
-
 		ArgumentParser parser = createDefaultParser();
-		parser.addArgument("publish-operation")
-			.type(String.class)
-			.dest(KEY_OPERATION)
-			.choices("update", "delete")
-			.help("the publish operation");
-		parser.addArgument("access-request")
-			.type(String.class)
-			.dest(KEY_AR)
-			.help("name of the access-request identifier");
-		parser.addArgument("ip-address")
-			.type(String.class)
-			.dest(KEY_IP)
-			.help("value of the ip-address identifier");
+		ParserUtil.addPublishOperation(parser);
+		ParserUtil.addAccessRequest(parser);
+		ParserUtil.addIpv4Address(parser);
 
 		parseParameters(parser, args);
 		
-		printParameters(KEY_OPERATION, new String[] {KEY_AR, KEY_IP});
+		printParameters(KEY_OPERATION, new String[] {KEY_ACCESS_REQUEST, KEY_IP});
 	
-		String ar = resource.getString(KEY_AR);
+		String ar = resource.getString(KEY_ACCESS_REQUEST);
 		String ip = resource.getString(KEY_IP);
 		
 		// prepare identifiers

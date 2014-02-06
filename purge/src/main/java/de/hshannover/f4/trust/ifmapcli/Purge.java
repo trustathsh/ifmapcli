@@ -40,6 +40,7 @@ package de.hshannover.f4.trust.ifmapcli;
 
 import net.sourceforge.argparse4j.inf.ArgumentParser;
 import de.hshannover.f4.trust.ifmapcli.common.AbstractClient;
+import de.hshannover.f4.trust.ifmapcli.common.ParserUtil;
 import de.hshannover.f4.trust.ifmapj.channel.SSRC;
 
 /**
@@ -53,13 +54,8 @@ public class Purge extends AbstractClient {
 	public static void main(String[] args) {
 		command = "purge";
 		
-		final String KEY_PUBLISHER_ID = "publisherId";
-
 		ArgumentParser parser = createDefaultParser();
-		parser.addArgument("--publisher-id", "-p")
-			.type(String.class)
-			.dest(KEY_PUBLISHER_ID)
-			.help("the publisher id");
+		ParserUtil.addPublisherId(parser);
 
 		parseParameters(parser, args);
 		
