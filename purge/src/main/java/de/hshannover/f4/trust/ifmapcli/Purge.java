@@ -38,18 +38,8 @@
  */
 package de.hshannover.f4.trust.ifmapcli;
 
-import java.io.InputStream;
-
-import javax.net.ssl.TrustManager;
-
-import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
-import net.sourceforge.argparse4j.inf.ArgumentParserException;
-import net.sourceforge.argparse4j.inf.Namespace;
-import de.hshannover.f4.trust.ifmapcli.common.Common;
-import de.hshannover.f4.trust.ifmapcli.common.ParserUtil;
-import de.hshannover.f4.trust.ifmapj.IfmapJ;
-import de.hshannover.f4.trust.ifmapj.IfmapJHelper;
+import de.hshannover.f4.trust.ifmapcli.common.AbstractClient;
 import de.hshannover.f4.trust.ifmapj.channel.SSRC;
 
 /**
@@ -58,50 +48,31 @@ import de.hshannover.f4.trust.ifmapj.channel.SSRC;
  * @author ib
  *
  */
-public class Purge {
-	final static String CMD = "purge";
+public class Purge extends AbstractClient {
 
 	public static void main(String[] args) {
+		command = "purge";
+		
 		final String KEY_PUBLISHER_ID = "publisherId";
 
-		ArgumentParser parser = ArgumentParsers.newArgumentParser(CMD);
+		ArgumentParser parser = createDefaultParser();
 		parser.addArgument("--publisher-id", "-p")
 			.type(String.class)
 			.dest(KEY_PUBLISHER_ID)
 			.help("the publisher id");
-		ParserUtil.addConnectionArgumentsTo(parser);
-		ParserUtil.addCommonArgumentsTo(parser);
 
-		Namespace res = null;
-		try {
-			res = parser.parseArgs(args);
-		} catch (ArgumentParserException e) {
-			parser.handleError(e);
-			System.exit(1);
-		}
-
-		if (res.getBoolean(ParserUtil.VERBOSE)) {
-			StringBuilder sb = new StringBuilder();
-			
-			sb.append(CMD).append(" ");
-			ParserUtil.appendStringIfNotNull(sb, res, KEY_PUBLISHER_ID);
-			
-			ParserUtil.printConnectionArguments(sb, res);
-			System.out.println(sb.toString());
-		}
-
+		parseParameters(parser, args);
+		
+		printParameters(new String[] {KEY_PUBLISHER_ID});
+		
+		String publisherId = resource.getString(KEY_PUBLISHER_ID);
+		
 		// purge
 		try {
-			InputStream is = Common.prepareTruststoreIs(res.getString(ParserUtil.KEYSTORE_PATH));
-			TrustManager[] tms = IfmapJHelper.getTrustManagers(is, res.getString(ParserUtil.KEYSTORE_PASS));
-			SSRC ssrc = IfmapJ.createSSRC(
-				res.getString(ParserUtil.URL),
-				res.getString(ParserUtil.USER),
-				res.getString(ParserUtil.PASS),
-				tms);
+			SSRC ssrc = createSSRC();
 			ssrc.newSession();
-			if (res.getString(KEY_PUBLISHER_ID) != null) {
-				ssrc.purgePublisher(res.getString(KEY_PUBLISHER_ID));
+			if (publisherId != null) {
+				ssrc.purgePublisher(publisherId);
 			} else {
 				ssrc.purgePublisher();
 			}

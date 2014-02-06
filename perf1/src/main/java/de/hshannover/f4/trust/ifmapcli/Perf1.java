@@ -38,31 +38,21 @@
  */
 package de.hshannover.f4.trust.ifmapcli;
 
-import java.io.InputStream;
 import java.util.ArrayList;
 
-import javax.net.ssl.TrustManager;
-
-import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
-import net.sourceforge.argparse4j.inf.ArgumentParserException;
-import net.sourceforge.argparse4j.inf.Namespace;
 
 import org.w3c.dom.Document;
 
-import de.hshannover.f4.trust.ifmapcli.common.Common;
-import de.hshannover.f4.trust.ifmapcli.common.ParserUtil;
-import de.hshannover.f4.trust.ifmapj.IfmapJ;
-import de.hshannover.f4.trust.ifmapj.IfmapJHelper;
+import de.hshannover.f4.trust.ifmapcli.common.AbstractClient;
 import de.hshannover.f4.trust.ifmapj.channel.SSRC;
 import de.hshannover.f4.trust.ifmapj.identifier.Device;
+import de.hshannover.f4.trust.ifmapj.identifier.Identifier;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifiers;
-import de.hshannover.f4.trust.ifmapj.identifier.Identity;
 import de.hshannover.f4.trust.ifmapj.identifier.IdentityType;
 import de.hshannover.f4.trust.ifmapj.messages.PublishRequest;
 import de.hshannover.f4.trust.ifmapj.messages.PublishUpdate;
 import de.hshannover.f4.trust.ifmapj.messages.Requests;
-import de.hshannover.f4.trust.ifmapj.metadata.StandardIfmapMetadataFactory;
 
 /**
  * This is a class to test performance of an IF-MAP 2.0 server. It was created
@@ -78,15 +68,12 @@ import de.hshannover.f4.trust.ifmapj.metadata.StandardIfmapMetadataFactory;
  * @author ib
  *
  */
-public class Perf1 {
+public class Perf1 extends AbstractClient {
 
-	private final static String CMD = "perf1";
 	private static int counter = 0;
 
-	private static StandardIfmapMetadataFactory metaFac = IfmapJ
-			.createStandardMetadataFactory();
-
 	public static void main(String[] args) {
+		command = "perf1";
 		
 		long maxBytes = Runtime.getRuntime().maxMemory();
 		System.out.println("Max memory: " + maxBytes / 1024 / 1024 + "M");
@@ -95,7 +82,7 @@ public class Perf1 {
 		final String KEY_NUMBER_UPDATES = "updates";
 		final String KEY_NUMBER_SPRINTS = "sprint-size";
 
-		ArgumentParser parser = ArgumentParsers.newArgumentParser(CMD);
+		ArgumentParser parser = createDefaultParser();
 		parser.addArgument("requests")
 			.type(Integer.class)
 			.dest(KEY_NUMBER_REQUESTS)
@@ -108,32 +95,14 @@ public class Perf1 {
 			.type(Integer.class)
 			.dest(KEY_NUMBER_SPRINTS)
 			.help("size of one sprint");
-		ParserUtil.addConnectionArgumentsTo(parser);
-		ParserUtil.addCommonArgumentsTo(parser);
 
-		Namespace res = null;
-		try {
-			res = parser.parseArgs(args);
-		} catch (ArgumentParserException e) {
-			parser.handleError(e);
-			System.exit(1);
-		}
+		parseParameters(parser, args);
+		
+		printParameters(new String[] {KEY_NUMBER_REQUESTS, KEY_NUMBER_UPDATES, KEY_NUMBER_SPRINTS});
 
-		if (res.getBoolean(ParserUtil.VERBOSE)) {
-			StringBuilder sb = new StringBuilder();
-			
-			sb.append(CMD).append(" ");
-			ParserUtil.appendIntegerIfNotNull(sb, res, KEY_NUMBER_REQUESTS);
-			ParserUtil.appendIntegerIfNotNull(sb, res, KEY_NUMBER_UPDATES);
-			ParserUtil.appendIntegerIfNotNull(sb, res, KEY_NUMBER_SPRINTS);
-			
-			ParserUtil.printConnectionArguments(sb, res);
-			System.out.println(sb.toString());
-		}
-
-		int numberRequests = res.getInt(KEY_NUMBER_REQUESTS);
-		int numberUpdates = res.getInt(KEY_NUMBER_UPDATES);
-		int sizeSprint = res.getInt(KEY_NUMBER_SPRINTS);
+		int numberRequests = resource.getInt(KEY_NUMBER_REQUESTS);
+		int numberUpdates = resource.getInt(KEY_NUMBER_UPDATES);
+		int sizeSprint = resource.getInt(KEY_NUMBER_SPRINTS);
 		
 		int numberOfSprints;
 		if (sizeSprint > numberRequests){
@@ -144,14 +113,14 @@ public class Perf1 {
 			numberOfSprints = numberRequests / sizeSprint;
 		}
 		
-		PublishRequest pr;
-		PublishUpdate pu;
-		Identity id;
-		
 		Device rootNode = Identifiers.createDev("parentNode");
-		Document authBy = metaFac.createAuthBy();
+		Document authBy = mf.createAuthBy();
 		ArrayList<PublishRequest> publishRequests = new ArrayList<PublishRequest>(1000);
 
+		PublishRequest pr;
+		PublishUpdate pu;
+		Identifier id;
+		
 		// create a certain number of publish requests
 		for (int i = 0; i < numberRequests; i++) {
 			pr = Requests.createPublishReq();
@@ -169,15 +138,8 @@ public class Perf1 {
 			publishRequests.add(pr);
 		}
 		
-		InputStream is;
 		try {
-			is = Common.prepareTruststoreIs(res.getString(ParserUtil.KEYSTORE_PATH));
-			TrustManager[] tms = IfmapJHelper.getTrustManagers(is, res.getString(ParserUtil.KEYSTORE_PASS));
-			SSRC ssrc = IfmapJ.createSSRC(
-					res.getString(ParserUtil.URL),
-					res.getString(ParserUtil.USER),
-					res.getString(ParserUtil.PASS),
-					tms);
+			SSRC ssrc = createSSRC();
 			ssrc.newSession();
 
 			long start = System.currentTimeMillis();

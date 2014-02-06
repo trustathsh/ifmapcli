@@ -38,39 +38,23 @@
  */
 package de.hshannover.f4.trust.ifmapcli;
 
-import java.io.FileNotFoundException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Vector;
 
-import javax.net.ssl.TrustManager;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.GnuParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.OptionBuilder;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
+import net.sourceforge.argparse4j.inf.ArgumentParser;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import de.hshannover.f4.trust.ifmapcli.common.AbstractClient;
 import de.hshannover.f4.trust.ifmapcli.common.Common;
-import de.hshannover.f4.trust.ifmapcli.common.Config;
-import de.hshannover.f4.trust.ifmapj.IfmapJ;
-import de.hshannover.f4.trust.ifmapj.IfmapJHelper;
 import de.hshannover.f4.trust.ifmapj.channel.SSRC;
-import de.hshannover.f4.trust.ifmapj.exception.EndSessionException;
-import de.hshannover.f4.trust.ifmapj.exception.IfmapErrorResult;
-import de.hshannover.f4.trust.ifmapj.exception.IfmapException;
-import de.hshannover.f4.trust.ifmapj.exception.InitializationException;
 import de.hshannover.f4.trust.ifmapj.identifier.Device;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifiers;
 import de.hshannover.f4.trust.ifmapj.identifier.Identity;
@@ -89,9 +73,7 @@ import de.hshannover.f4.trust.ifmapj.messages.Requests;
  * @author Ingo Bente
  *
  */
-public class Feature2 {
-
-	final static String CMD = "feature2";
+public class Feature2 extends AbstractClient {
 
 	final static String[] PERMISSIONS = {	"ACCESS_COARSE_LOCATION",
 		"ACCESS_NETWORK_STATE", "SEND_SMS", "INTERNET", "INSTALL_PACKAGES"};
@@ -100,93 +82,11 @@ public class Feature2 {
 	final static String NAMESPACE = "http://www.esukom.de/2012/ifmap-metadata/1";
 	final static String NAMESPACE_PREFIX = "esukom";
 
-	private SSRC mSsrc;
+	private static String deviceIdentifier;
 
-	private String mDeviceIdentifier;
+	private static List<PublishUpdate> publishUpdates = new ArrayList<PublishUpdate>();
 
-	private List<PublishUpdate> mPublishUpdates = new ArrayList<PublishUpdate>();
-
-	private DocumentBuilderFactory mDocumentBuilderFactory;
-	private DocumentBuilder mDocumentBuilder;
-
-	// CLI options parser stuff ( not the actual input params )
-	Options mOptions;
-
-	Option mDeviceIdentifierOption;
-	Option mTreeDepthOption;
-	Option mMaxChildsPerCategoryOption;
-	Option mMaxFeaturePerCategoryOption;
-
-
-	Option mNameOp;
-	Option mHelpOp;
-
-	// parsed command line options
-	CommandLine mCmdLine;
-
-	// configuration
-	Config mConfig;
-
-	public Feature2(String[] args) throws FileNotFoundException,
-			InitializationException {
-		mConfig = Common.loadEnvParams();
-		System.out.println(CMD + " uses config " + mConfig);
-		parseCommandLine(args);
-		initSsrc();
-
-		mDocumentBuilderFactory = DocumentBuilderFactory.newInstance();
-
-		try {
-			mDocumentBuilder = mDocumentBuilderFactory.newDocumentBuilder();
-		} catch (ParserConfigurationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			throw new RuntimeException(e);
-		}
-
-		preparePublishUpdates();
-	}
-
-	/**
-	 * Create session, start publishing, end session
-	 *
-	 * @throws IfmapErrorResult
-	 * @throws IfmapException
-	 * @throws EndSessionException
-	 */
-	public void start() throws IfmapErrorResult, IfmapException, EndSessionException {
-		mSsrc.newSession();
-
-		PublishRequest req = Requests.createPublishReq();
-
-		for (PublishUpdate u : mPublishUpdates) {
-			req.addPublishElement(u);
-		}
-
-		mSsrc.publish(req);
-		mSsrc.endSession();
-	}
-
-	private void preparePublishUpdates() {
-		PublishUpdate update = Requests.createPublishUpdate();
-
-		DummyCategory root = prepareCategoriesAndFeatures();
-
-		// from device to category
-		String nodeName = root.localId;
-		Device dev = Identifiers.createDev(mDeviceIdentifier);
-		Identity rootCategory = createCategory(nodeName, mDeviceIdentifier);
-		Document deviceCategory = createCategoryLink("device-category");
-		update.setIdentifier1(dev);
-		update.setIdentifier2(rootCategory);
-		update.addMetadata(deviceCategory);
-		update.setLifeTime(MetadataLifetime.forever);
-		mPublishUpdates.add(update);
-
-		fork(rootCategory, root.features, root.subCategories);
-
-//		fork(smartphoneCategory, new String[] {nodeName}, );
-	}
+	private static DocumentBuilder documentBuilder;
 
 	/**
 	 * Creates the child nodes for the given parent {@link Identity}. The
@@ -196,7 +96,7 @@ public class Feature2 {
 	 * @param parent
 	 * @param currentDepth
 	 */
-	private void fork(Identity parent, Vector<DummyFeature> features, Vector<DummyCategory> subCategories) {
+	private static void fork(Identity parent, Vector<DummyFeature> features, Vector<DummyCategory> subCategories) {
 
 		HashMap<String, Integer> instanceCounter = new HashMap<String, Integer>();
 
@@ -210,7 +110,7 @@ public class Feature2 {
 			update.addMetadata(meta);
 			update.setLifeTime(MetadataLifetime.forever);
 
-			mPublishUpdates.add(update);
+			publishUpdates.add(update);
 		}
 
 		// add sub categories
@@ -233,7 +133,7 @@ public class Feature2 {
 				fullNodeName += ":" + currentInstanceCounter;
 			}
 
-			Identity node = createCategory(fullNodeName, mDeviceIdentifier);
+			Identity node = createCategory(fullNodeName, deviceIdentifier);
 			Document subCategoryOf = createCategoryLink("subcategory-of");
 
 			PublishUpdate update = Requests.createPublishUpdate();
@@ -242,14 +142,14 @@ public class Feature2 {
 			update.addMetadata(subCategoryOf);
 			update.setLifeTime(MetadataLifetime.forever);
 
-			mPublishUpdates.add(update);
+			publishUpdates.add(update);
 
 			fork(node, subCategories.get(i).features, subCategories.get(i).subCategories);
 		}
 	}
 
-	private Document createCategoryLink(String name) {
-		Document doc = mDocumentBuilder.newDocument();
+	private static Document createCategoryLink(String name) {
+		Document doc = documentBuilder.newDocument();
 		Element e = doc.createElementNS(NAMESPACE, NAMESPACE_PREFIX + ":" + name);
 		e.setAttributeNS(null, "ifmap-cardinality", "singleValue");
 
@@ -257,8 +157,8 @@ public class Feature2 {
 		return doc;
 	}
 
-	private Document createFeature(String id, String type, String value) {
-		Document doc = mDocumentBuilder.newDocument();
+	private static Document createFeature(String id, String type, String value) {
+		Document doc = documentBuilder.newDocument();
 		Element feature = doc.createElementNS(NAMESPACE, NAMESPACE_PREFIX + ":feature");
 
 		feature.setAttributeNS(null, "ifmap-cardinality", "multiValue");
@@ -282,7 +182,7 @@ public class Feature2 {
 		return doc;
 	}
 
-	private Identity createCategory(String name, String admDomain) {
+	private static Identity createCategory(String name, String admDomain) {
 		return Identifiers.createIdentity(
 				IdentityType.other,
 				name,
@@ -290,90 +190,67 @@ public class Feature2 {
 				OTHER_TYPE_DEFINITION);
 	}
 
-	/**
-	 * parse the command line by using Apache commons-cli
-	 *
-	 * @param args
-	 */
-	private void parseCommandLine(String[] args) {
-		mOptions = new Options();
-		// automatically generate the help statement
-		HelpFormatter formatter = new HelpFormatter();
-		formatter.setWidth(100);
-
-		mHelpOp = new Option("h", "help", false, "print this message");
-		mOptions.addOption(mHelpOp);
-
-
-		OptionBuilder.hasArg();
-		OptionBuilder.isRequired();
-		OptionBuilder.withArgName("device-identifier");
-		OptionBuilder.withType(String.class);
-		OptionBuilder.withDescription("the target device identifier");
-		mDeviceIdentifierOption = OptionBuilder.create("i");
-		mOptions.addOption(mDeviceIdentifierOption);
-
-		// create the parser
-		CommandLineParser parser = new GnuParser();
-		try {
-			// parse the command line arguments
-			mCmdLine = parser.parse(mOptions, args);
-
-			mDeviceIdentifier =
-					mCmdLine.getOptionValue(mDeviceIdentifierOption.getOpt());
-		} catch (ParseException exp) {
-			// oops, something went wrong
-			System.err.println("Parsing failed.  Reason: " + exp.getMessage());
-			formatter.printHelp(Feature2.CMD, mOptions);
-			System.out.println(Common.USAGE);
-			System.exit(1);
-		}
-	}
-
-	/**
-	 * Load {@link TrustManager} instances and create {@link SSRC}.
-	 *
-	 * @throws FileNotFoundException
-	 * @throws InitializationException
-	 */
-	private void initSsrc() throws FileNotFoundException,
-			InitializationException {
-		InputStream is = Common
-				.prepareTruststoreIs(mConfig.getTruststorePath());
-		TrustManager[] tms = IfmapJHelper.getTrustManagers(is,
-				mConfig.getTruststorePass());
-		mSsrc = IfmapJ.createSSRC(mConfig.getUrl(), mConfig.getUser(),
-				mConfig.getPass(), tms);
-	}
-
 	public static void main(String[] args) {
-		System.out.println("feature2");
+		command = "feature2";
 
+		final String KEY_DEV = "target-device";
+
+		ArgumentParser parser = createDefaultParser();
+		parser.addArgument("target-device")
+			.type(String.class)
+			.dest(KEY_DEV)
+			.help("the target device identifier");
+
+		parseParameters(parser, args);
+
+		printParameters(new String[] {KEY_DEV});
+		
+		deviceIdentifier = resource.getString(KEY_DEV);
+		
 		try {
-			Feature2 p = new Feature2(args);
-			p.start();
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
+			DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+			documentBuilder = documentBuilderFactory.newDocumentBuilder();
+			
+			
+			PublishUpdate update = Requests.createPublishUpdate();
+
+			DummyCategory root = prepareCategoriesAndFeatures();
+
+			// from device to category
+			String nodeName = root.localId;
+			Device dev = Identifiers.createDev(deviceIdentifier);
+			Identity rootCategory = createCategory(nodeName, deviceIdentifier);
+			Document deviceCategory = createCategoryLink("device-category");
+			update.setIdentifier1(dev);
+			update.setIdentifier2(rootCategory);
+			update.addMetadata(deviceCategory);
+			update.setLifeTime(MetadataLifetime.forever);
+			publishUpdates.add(update);
+
+			fork(rootCategory, root.features, root.subCategories);
+
+//			fork(smartphoneCategory, new String[] {nodeName}, );
+			
+			SSRC ssrc = createSSRC();
+			ssrc.newSession();
+
+			PublishRequest req = Requests.createPublishReq();
+
+			for (PublishUpdate u : publishUpdates) {
+				req.addPublishElement(u);
+			}
+
+			ssrc.publish(req);
+			ssrc.endSession();
+		} catch (Exception e) {
 			e.printStackTrace();
-		} catch (InitializationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IfmapErrorResult e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IfmapException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (EndSessionException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.exit(-1);
 		}
+
+		
 	}
 
-	/**
-	 *
-	 */
-	private DummyCategory prepareCategoriesAndFeatures(){
+	private static DummyCategory prepareCategoriesAndFeatures(){
 
 		// root level categories
 		DummyCategory smartphone = new DummyCategory("smartphone", false);
@@ -429,7 +306,7 @@ public class Feature2 {
 	}
 
 
-	private class DummyCategory {
+	private static class DummyCategory {
 		String localId;
 		Vector<DummyCategory> subCategories;
 		Vector<DummyFeature> features;
@@ -452,7 +329,7 @@ public class Feature2 {
 
 	}
 
-	private class DummyFeature {
+	private static class DummyFeature {
 		String localId;
 		String type;
 		String value;

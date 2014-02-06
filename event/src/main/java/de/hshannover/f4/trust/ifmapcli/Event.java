@@ -38,28 +38,18 @@
  */
 package de.hshannover.f4.trust.ifmapcli;
 
-import java.io.InputStream;
 import java.util.Date;
 
-import javax.net.ssl.TrustManager;
-
-import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
-import net.sourceforge.argparse4j.inf.ArgumentParserException;
-import net.sourceforge.argparse4j.inf.Namespace;
 
 import org.w3c.dom.Document;
 
+import de.hshannover.f4.trust.ifmapcli.common.AbstractClient;
 import de.hshannover.f4.trust.ifmapcli.common.Common;
-import de.hshannover.f4.trust.ifmapcli.common.ParserUtil;
-import de.hshannover.f4.trust.ifmapj.IfmapJ;
-import de.hshannover.f4.trust.ifmapj.IfmapJHelper;
 import de.hshannover.f4.trust.ifmapj.binding.IfmapStrings;
 import de.hshannover.f4.trust.ifmapj.channel.SSRC;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifier;
-import de.hshannover.f4.trust.ifmapj.identifier.Identifiers;
-import de.hshannover.f4.trust.ifmapj.identifier.IdentityType;
 import de.hshannover.f4.trust.ifmapj.messages.MetadataLifetime;
 import de.hshannover.f4.trust.ifmapj.messages.PublishDelete;
 import de.hshannover.f4.trust.ifmapj.messages.PublishNotify;
@@ -67,48 +57,33 @@ import de.hshannover.f4.trust.ifmapj.messages.PublishRequest;
 import de.hshannover.f4.trust.ifmapj.messages.PublishUpdate;
 import de.hshannover.f4.trust.ifmapj.messages.Requests;
 import de.hshannover.f4.trust.ifmapj.metadata.Significance;
-import de.hshannover.f4.trust.ifmapj.metadata.StandardIfmapMetadataFactory;
 
 /**
  * A simple tool that can publish event metadata.
- *
+ * 
  * Command line arguments specify the parameters.
- *
+ * 
  * Environment variables define the connection details of the MAPS.
- *
+ * 
  * @author ib
- *
+ * 
  */
-public class Event {
-
-	enum IdType {
-		ipv4, ipv6, mac, dev, ar, id
-	}
+public class Event extends AbstractClient {
 
 	enum EventType {
-		p2p,
-		cve,
-		botnet_infection,
-		worm_infection,
-		excessive_flows,
-		behavioral_change,
-		policy_violation,
-		other
+		p2p, cve, botnet_infection, worm_infection, excessive_flows, behavioral_change, policy_violation, other
 	}
 
-	public final static String CMD = "event";
-
-	private static StandardIfmapMetadataFactory mMetaFac =
-			IfmapJ.createStandardMetadataFactory();
-
 	public static void main(String[] args) {
+		command = "event";
+
 		final String KEY_OPERATION = "publishOperation";
 		final String KEY_IDENTIFIER = "identifier";
 		final String KEY_IDENTIFIER_TYPE = "identifierType";
 		final String KEY_NAME = "name";
 
 		// TODO add discovered-time
-//		final String KEY_DISCOVERED_TIME = "discovered-time";
+		// final String KEY_DISCOVERED_TIME = "discovered-time";
 		final String KEY_DISCOVERER_ID = "discoverer-id";
 		final String KEY_MAGNITUDE = "magnitude";
 		final String KEY_CONFIDENCE = "confidence";
@@ -118,160 +93,118 @@ public class Event {
 		final String KEY_INFORMATION = "information";
 		final String KEY_VULNERABILITY_URI = "vulnerability-uri";
 
-		ArgumentParser parser = ArgumentParsers.newArgumentParser(CMD);
-		parser.addArgument("publish-operation")
-			.type(String.class)
-			.dest(KEY_OPERATION)
-			.choices("update", "delete", "notify")
-			.help("the publish operation");
+		ArgumentParser parser = createDefaultParser();
+		parser.addArgument("publish-operation").type(String.class)
+				.dest(KEY_OPERATION).choices("update", "delete", "notify")
+				.help("the publish operation");
 		parser.addArgument("identifier-type")
-			.type(IdType.class)
-			.dest(KEY_IDENTIFIER_TYPE)
-			.choices(
-				IdType.ipv4,
-				IdType.ipv6,
-				IdType.mac,
-				IdType.dev,
-				IdType.ar,
-				IdType.id)
-			.help("the type of the identifier");
-		parser.addArgument("identifier")
-			.type(String.class)
-			.dest(KEY_IDENTIFIER)
-			.help("the identifier");
+				.type(IdType.class)
+				.dest(KEY_IDENTIFIER_TYPE)
+				.choices(IdType.ipv4, IdType.ipv6, IdType.mac, IdType.dev,
+						IdType.ar, IdType.id)
+				.help("the type of the identifier");
+		parser.addArgument("identifier").type(String.class)
+				.dest(KEY_IDENTIFIER).help("the identifier");
 		// event content
-		parser.addArgument("name")
-			.type(String.class)
-			.dest(KEY_NAME)
-			.help("the name of the event");
+		parser.addArgument("name").type(String.class).dest(KEY_NAME)
+				.help("the name of the event");
 
 		// TODO add discovered-time
-//		parser.addArgument(KEY_DISCOVERED_TIME)
-//			.type(String.class)
-//			.dest(KEY_DISCOVERED_TIME)
-//			.setDefault(new Date())
-//			.help("detection time of the event, default is now");
-		parser.addArgument("--discoverer-id")
-			.type(String.class)
-			.dest(KEY_DISCOVERER_ID)
-			.setDefault("ifmapj")
-			.help("the discoverer-id of the event, default is 'ifmapj'");
-		parser.addArgument("--magnitude")
-			.type(Integer.class)
-			.dest(KEY_MAGNITUDE)
-			.setDefault(0)
-			.choices(Arguments.range(0, 100))
-			.help("the magnitude of the event, default is 0");
-		parser.addArgument("--confidence")
-			.type(Integer.class)
-			.dest(KEY_CONFIDENCE)
-			.setDefault(0)
-			.choices(Arguments.range(0, 100))
-			.help("the confidence for the event, default is 0");
+		// parser.addArgument(KEY_DISCOVERED_TIME)
+		// .type(String.class)
+		// .dest(KEY_DISCOVERED_TIME)
+		// .setDefault(new Date())
+		// .help("detection time of the event, default is now");
+		parser.addArgument("--discoverer-id").type(String.class)
+				.dest(KEY_DISCOVERER_ID).setDefault("ifmapj")
+				.help("the discoverer-id of the event");
+		parser.addArgument("--magnitude").type(Integer.class)
+				.dest(KEY_MAGNITUDE).setDefault(0)
+				.choices(Arguments.range(0, 100))
+				.help("the magnitude of the event");
+		parser.addArgument("--confidence").type(Integer.class)
+				.dest(KEY_CONFIDENCE).setDefault(0)
+				.choices(Arguments.range(0, 100))
+				.help("the confidence for the event");
 		parser.addArgument("--significance")
-			.type(Significance.class)
-			.setDefault(Significance.informational)
-			.choices(
-				Significance.critical,
-				Significance.important,
-				Significance.informational)
-			.dest(KEY_SIGNIFICANCE)
-			.help("the significance of the event, default is 'informational'");
+				.type(Significance.class)
+				.setDefault(Significance.informational)
+				.choices(Significance.critical, Significance.important,
+						Significance.informational)
+				.dest(KEY_SIGNIFICANCE)
+				.help("the significance of the event");
 		parser.addArgument("--type")
-			.type(EventType.class)
-			.choices(
-				EventType.p2p,
-				EventType.cve,
-				EventType.botnet_infection,
-				EventType.worm_infection,
-				EventType.excessive_flows,
-				EventType.behavioral_change,
-				EventType.policy_violation,
-				EventType.other)
-			.dest(KEY_TYPE)
-			.setDefault(EventType.other)
-			.help("the type of the event, default is 'other'");
-		parser.addArgument("--other-type-def")
-			.type(String.class)
-			.dest(KEY_OTHERTYPE_DEFINITION)
-			.help("other-type-definition of the event");
-		parser.addArgument("--information")
-			.type(String.class)
-			.dest(KEY_INFORMATION)
-			.help("\"human consumable\" informational string");
-		parser.addArgument("--vulnerability-uri")
-			.type(String.class)
-			.dest(KEY_VULNERABILITY_URI)
-			.help("URI of the CVE if type cve is used");
-		ParserUtil.addConnectionArgumentsTo(parser);
-		ParserUtil.addCommonArgumentsTo(parser);
+				.type(EventType.class)
+				.choices(EventType.p2p, EventType.cve,
+						EventType.botnet_infection, EventType.worm_infection,
+						EventType.excessive_flows, EventType.behavioral_change,
+						EventType.policy_violation, EventType.other)
+				.dest(KEY_TYPE).setDefault(EventType.other)
+				.help("the type of the event");
+		parser.addArgument("--other-type-def").type(String.class)
+				.dest(KEY_OTHERTYPE_DEFINITION)
+				.help("other-type-definition of the event");
+		parser.addArgument("--information").type(String.class)
+				.dest(KEY_INFORMATION)
+				.help("\"human consumable\" informational string");
+		parser.addArgument("--vulnerability-uri").type(String.class)
+				.dest(KEY_VULNERABILITY_URI)
+				.help("URI of the CVE if type cve is used");
 
-		Namespace res = null;
-		try {
-			res = parser.parseArgs(args);
-		} catch (ArgumentParserException e) {
-			parser.handleError(e);
-			System.exit(1);
-		}
+		parseParameters(parser, args);
 
-		IdType identifierType = res.get(KEY_IDENTIFIER_TYPE);
-		String identifierName = res.getString(KEY_IDENTIFIER);
+		printParameters(KEY_OPERATION, new String[] {KEY_IDENTIFIER_TYPE, KEY_IDENTIFIER, KEY_NAME,
+				KEY_DISCOVERER_ID, KEY_MAGNITUDE, KEY_CONFIDENCE, KEY_SIGNIFICANCE, KEY_TYPE,
+				KEY_OTHERTYPE_DEFINITION, KEY_INFORMATION, KEY_VULNERABILITY_URI});
+
+		IdType identifierType = resource.get(KEY_IDENTIFIER_TYPE);
+		String identifierName = resource.getString(KEY_IDENTIFIER);
 		Identifier identifier = getIdentifier(identifierType, identifierName);
 
-		EventType eventType = res.get(KEY_TYPE);
-		Significance eventSignificance = res.get(KEY_SIGNIFICANCE);
-		Document event = mMetaFac.createEvent(
-			res.getString(KEY_NAME),
-			Common.getTimeAsXsdDateTime(new Date()), // TODO add discovered-time to argument parser
-			res.getString(KEY_DISCOVERER_ID),
-			res.getInt(KEY_MAGNITUDE),
-			res.getInt(KEY_CONFIDENCE),
-			eventSignificance,
-			ifmapjEventTypeFrom(eventType),
-			res.getString(KEY_OTHERTYPE_DEFINITION),
-			res.getString(KEY_INFORMATION),
-			res.getString(KEY_VULNERABILITY_URI)
-		);
+		EventType eventType = resource.get(KEY_TYPE);
+		Significance eventSignificance = resource.get(KEY_SIGNIFICANCE);
+		Document event = mf.createEvent(
+				resource.getString(KEY_NAME),
+				Common.getTimeAsXsdDateTime(new Date()), // TODO add
+															// discovered-time
+															// to argument
+															// parser
+				resource.getString(KEY_DISCOVERER_ID),
+				resource.getInt(KEY_MAGNITUDE),
+				resource.getInt(KEY_CONFIDENCE), eventSignificance,
+				ifmapjEventTypeFrom(eventType),
+				resource.getString(KEY_OTHERTYPE_DEFINITION),
+				resource.getString(KEY_INFORMATION),
+				resource.getString(KEY_VULNERABILITY_URI));
 
-
-		SSRC ssrc = null;
+		SSRC ssrc;
 		try {
-			InputStream is = Common.prepareTruststoreIs(res.getString(ParserUtil.KEYSTORE_PATH));
-			TrustManager[] tms = IfmapJHelper.getTrustManagers(is, res.getString(ParserUtil.KEYSTORE_PASS));
-			ssrc = IfmapJ.createSSRC(
-					res.getString(ParserUtil.URL),
-					res.getString(ParserUtil.USER),
-					res.getString(ParserUtil.PASS),
-					tms);
+			ssrc = createSSRC();
 			ssrc.newSession();
-		} catch (Exception e) {
-			e.printStackTrace();
-			System.exit(-1);
-		}
 
-		PublishRequest req = Requests.createPublishReq();
+			PublishRequest req = Requests.createPublishReq();
 
-		if (res.getString(KEY_OPERATION).equals("update")) {
-			PublishUpdate publishUpdate = Requests.createPublishUpdate(
-				identifier, event, MetadataLifetime.forever);
-			req.addPublishElement(publishUpdate);
-		} else if (res.getString(KEY_OPERATION).equals("notify")) {
-			PublishNotify publishNotify = Requests.createPublishNotify(
-					identifier, event);
+			if (isUpdate(KEY_OPERATION)) {
+				PublishUpdate publishUpdate = Requests.createPublishUpdate(
+						identifier, event, MetadataLifetime.forever);
+				req.addPublishElement(publishUpdate);
+			} else if (isNotify(KEY_OPERATION)) {
+				PublishNotify publishNotify = Requests.createPublishNotify(
+						identifier, event);
 				req.addPublishElement(publishNotify);
-		} else if (res.getString(KEY_OPERATION).equals("delete")) {
-			// TODO expand filter string to all event attributes
-			String filter = String.format(
-				"meta:event[@ifmap-publisher-id='%s' and name='%s']",
-				ssrc.getPublisherId(), res.getString(KEY_NAME));
+			} else if (isDelete(KEY_OPERATION)) {
+				// TODO expand filter string to all event attributes
+				String filter = String.format(
+						"meta:event[@ifmap-publisher-id='%s' and name='%s']",
+						ssrc.getPublisherId(), resource.getString(KEY_NAME));
 
-			PublishDelete publishDelete = Requests.createPublishDelete(
-				identifier, filter);
-			publishDelete.addNamespaceDeclaration("meta", IfmapStrings.STD_METADATA_NS_URI);
-			req.addPublishElement(publishDelete);
-		}
+				PublishDelete publishDelete = Requests.createPublishDelete(
+						identifier, filter);
+				publishDelete.addNamespaceDeclaration("meta",
+						IfmapStrings.STD_METADATA_NS_URI);
+				req.addPublishElement(publishDelete);
+			}
 
-		try {
 			ssrc.publish(req);
 			ssrc.endSession();
 		} catch (Exception e) {
@@ -281,27 +214,8 @@ public class Event {
 
 	}
 
-	private static Identifier getIdentifier(IdType type, String name) {
-		switch (type) {
-		case ipv4:
-			return Identifiers.createIp4(name);
-		case ipv6:
-			return Identifiers.createIp6(name);
-		case id:
-			// TODO add optinal parameter for the identity identifier type
-			return Identifiers.createIdentity(IdentityType.other, name);
-		case mac:
-			return Identifiers.createMac(name);
-		case dev:
-			return Identifiers.createDev(name);
-		case ar:
-			return Identifiers.createAr(name);
-		default:
-			throw new RuntimeException("unknown identifier type '" + type + "'");
-		}
-	}
-
-	private static de.hshannover.f4.trust.ifmapj.metadata.EventType ifmapjEventTypeFrom(EventType type) {
+	private static de.hshannover.f4.trust.ifmapj.metadata.EventType ifmapjEventTypeFrom(
+			EventType type) {
 		switch (type) {
 		case p2p:
 			return de.hshannover.f4.trust.ifmapj.metadata.EventType.p2p;

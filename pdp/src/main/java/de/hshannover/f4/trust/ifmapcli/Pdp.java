@@ -38,25 +38,18 @@
  */
 package de.hshannover.f4.trust.ifmapcli;
 
-import java.io.FileNotFoundException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
-import javax.net.ssl.TrustManager;
+import net.sourceforge.argparse4j.inf.ArgumentParser;
 
 import org.w3c.dom.Document;
 
+import de.hshannover.f4.trust.ifmapcli.common.AbstractClient;
 import de.hshannover.f4.trust.ifmapcli.common.Common;
-import de.hshannover.f4.trust.ifmapcli.common.Config;
-import de.hshannover.f4.trust.ifmapj.IfmapJ;
-import de.hshannover.f4.trust.ifmapj.IfmapJHelper;
 import de.hshannover.f4.trust.ifmapj.binding.IfmapStrings;
 import de.hshannover.f4.trust.ifmapj.channel.SSRC;
-import de.hshannover.f4.trust.ifmapj.exception.IfmapErrorResult;
-import de.hshannover.f4.trust.ifmapj.exception.IfmapException;
-import de.hshannover.f4.trust.ifmapj.exception.InitializationException;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifier;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifiers;
 import de.hshannover.f4.trust.ifmapj.identifier.IdentityType;
@@ -65,7 +58,6 @@ import de.hshannover.f4.trust.ifmapj.messages.PublishDelete;
 import de.hshannover.f4.trust.ifmapj.messages.PublishElement;
 import de.hshannover.f4.trust.ifmapj.messages.PublishRequest;
 import de.hshannover.f4.trust.ifmapj.messages.Requests;
-import de.hshannover.f4.trust.ifmapj.metadata.StandardIfmapMetadataFactory;
 import de.hshannover.f4.trust.ifmapj.metadata.WlanSecurityEnum;
 import de.hshannover.f4.trust.ifmapj.metadata.WlanSecurityType;
 
@@ -97,90 +89,60 @@ import de.hshannover.f4.trust.ifmapj.metadata.WlanSecurityType;
  * @author ib
  *
  */
-public class Pdp {
-	public static final String CMD = "pdp";
-	public static final int MIN_ARGS = 4;		// update|delete, username, ip, mac
-	public static final int EXPECTED_ARGS = 9;	// update|delete, username, ip, mac
-												// url, user, pass,
-												// keystorePath, keystorePass
+public class Pdp extends AbstractClient {
 
-	private StandardIfmapMetadataFactory mStandardMetaFactory;
+	private static PublishRequest publishRequest;
 
-	PublishRequest mPublishRequest;
+	private static boolean isUpdate;
+	private static String username;
+	private static String ip;
+	private static String mac;
 
-	private boolean mIsUpdate;
-	private String mUsername;
-	private String mIp;
-	private String mMac;
-
-	private Config mConfig;
-
-	private SSRC mSsrc;
-
-	public Pdp(String operation, String username, String ip, String mac,
-			Config config) {
-		// init factories
-		mStandardMetaFactory = IfmapJ.createStandardMetadataFactory();
-
-		// save parameters
-		mIsUpdate = Common.isUpdate(operation);
-		mUsername = username;
-		mIp = ip;
-		mMac = mac;
-
-		// save configuration
-		mConfig = config;
-
-		// build ifmapj request object
-		mPublishRequest = Requests.createPublishReq();
-	}
-
-	private void initSsrc() throws FileNotFoundException, InitializationException {
-		InputStream is = Common.prepareTruststoreIs(mConfig.getTruststorePath());
-		TrustManager[] tms = IfmapJHelper.getTrustManagers(is, mConfig.getTruststorePass());
-		mSsrc = IfmapJ.createSSRC(mConfig.getUrl(), mConfig.getUser(), mConfig.getPass(), tms);
-	}
-
-	public void publish() throws FileNotFoundException, IfmapErrorResult, IfmapException{
+	private static void publish() {
 		Identifier accessRequest;
 		Identifier macAddress, ipAddress;
 		Identifier identity;
 		Identifier pepDevice, pdpDevice, endpointDevice;
 
-		// establish session
-		initSsrc();
-		mSsrc.newSession();
-
-		// create identifiers
-		accessRequest = Identifiers.createAr(mSsrc.getPublisherId() + ":" + mUsername.hashCode());
-		macAddress = Identifiers.createMac(mMac);
-		ipAddress = Identifiers.createIp4(mIp);
-		identity = Identifiers.createIdentity(IdentityType.userName, mUsername);
-		pepDevice = Identifiers.createDev("example-pep-id:" + mUsername.hashCode());
-		pdpDevice = Identifiers.createDev("example-pdp-id:" + mUsername.hashCode());
-		endpointDevice = Identifiers.createDev("example-endpoint-id:" + mUsername.hashCode());
-
-		// add mandatory metadata to publish request
-		addArDevice(accessRequest, endpointDevice);
-		addArMac(accessRequest, macAddress);
-		addArIp(accessRequest, ipAddress);
-		addAuthBy(accessRequest, pdpDevice);
-
-		// add optional metadata to publish request
-		addAuthAs(accessRequest, identity);
-		addCap(accessRequest);
-		addDevAttr(accessRequest, endpointDevice);
-		addDevChar(accessRequest, pdpDevice);
-		addRole(accessRequest, identity);
-		addLayer2(accessRequest, pepDevice);
-		addWlanInfo(accessRequest, pepDevice);
-
-		// do publish
-		mSsrc.publish(mPublishRequest);
-
-		// clean up
-		mSsrc.endSession();
-		mSsrc.closeTcpConnection();
+		try {
+			// establish session
+			SSRC ssrc = createSSRC();
+			ssrc.newSession();
+			
+			// create identifiers
+			accessRequest = Identifiers.createAr(ssrc.getPublisherId() + ":" + username.hashCode());
+			macAddress = Identifiers.createMac(mac);
+			ipAddress = Identifiers.createIp4(ip);
+			identity = Identifiers.createIdentity(IdentityType.userName, username);
+			pepDevice = Identifiers.createDev("example-pep-id:" + username.hashCode());
+			pdpDevice = Identifiers.createDev("example-pdp-id:" + username.hashCode());
+			endpointDevice = Identifiers.createDev("example-endpoint-id:" + username.hashCode());
+			
+			// add mandatory metadata to publish request
+			addArDevice(accessRequest, endpointDevice);
+			addArMac(accessRequest, macAddress);
+			addArIp(accessRequest, ipAddress);
+			addAuthBy(accessRequest, pdpDevice);
+			
+			// add optional metadata to publish request
+			addAuthAs(accessRequest, identity);
+			addCap(accessRequest);
+			addDevAttr(accessRequest, endpointDevice);
+			addDevChar(accessRequest, pdpDevice);
+			addRole(accessRequest, identity);
+			addLayer2(accessRequest, pepDevice);
+			addWlanInfo(accessRequest, pepDevice);
+			
+			// do publish
+			ssrc.publish(publishRequest);
+			
+			// clean up
+			ssrc.endSession();
+			ssrc.closeTcpConnection();		
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.exit(-1);
+		}
 	}
 
 	/**
@@ -190,7 +152,7 @@ public class Pdp {
 	 * @param accessRequest
 	 * @param pepDevice
 	 */
-	private void addWlanInfo(Identifier accessRequest, Identifier pepDevice) {
+	private static void addWlanInfo(Identifier accessRequest, Identifier pepDevice) {
 		// create and set wlan-information metadata
 		WlanSecurityType wlan1 = new WlanSecurityType(WlanSecurityEnum.ccmp, null);
 		WlanSecurityType wlan2 = new WlanSecurityType(WlanSecurityEnum.other, "my own wlan security type");
@@ -199,16 +161,16 @@ public class Pdp {
 		unicastSec.add(wlan1);
 		List<WlanSecurityType> managementSec = new ArrayList<WlanSecurityType>();
 		managementSec.add(wlan3);
-		Document metadata = mStandardMetaFactory.createWlanInformation("eduroam", unicastSec, wlan2, managementSec);
+		Document metadata = mf.createWlanInformation("eduroam", unicastSec, wlan2, managementSec);
 		PublishElement publishEl;
-		if(mIsUpdate){
+		if(isUpdate){
 			publishEl = Requests.createPublishUpdate(accessRequest, pepDevice, metadata, MetadataLifetime.forever);
 		} else {
 			PublishDelete publishDelete = Requests.createPublishDelete(accessRequest, pepDevice, "meta:wlan-information");
 			publishDelete.addNamespaceDeclaration(IfmapStrings.STD_METADATA_PREFIX,	IfmapStrings.STD_METADATA_NS_URI);
 			publishEl = publishDelete;
 		}
-		mPublishRequest.addPublishElement(publishEl);
+		publishRequest.addPublishElement(publishEl);
 	}
 
 	/**
@@ -219,17 +181,17 @@ public class Pdp {
 	 * @param accessRequest
 	 * @param pepDevice
 	 */
-	private void addLayer2(Identifier accessRequest, Identifier pepDevice) {
-		Document metadata = mStandardMetaFactory.createLayer2Information(96, "vlan1", 1, null);
+	private static void addLayer2(Identifier accessRequest, Identifier pepDevice) {
+		Document metadata = mf.createLayer2Information(96, "vlan1", 1, null);
 		PublishElement publishEl;
-		if(mIsUpdate){
+		if(isUpdate){
 			publishEl = Requests.createPublishUpdate(accessRequest, pepDevice, metadata, MetadataLifetime.forever);
 		} else {
 			PublishDelete publishDelete = Requests.createPublishDelete(accessRequest, pepDevice, "meta:layer2-information");
 			publishDelete.addNamespaceDeclaration(IfmapStrings.STD_METADATA_PREFIX,	IfmapStrings.STD_METADATA_NS_URI);
 			publishEl = publishDelete;
 		}
-		mPublishRequest.addPublishElement(publishEl);
+		publishRequest.addPublishElement(publishEl);
 	}
 
 	/**
@@ -239,17 +201,17 @@ public class Pdp {
 	 * @param accessRequest
 	 * @param identity
 	 */
-	private void addRole(Identifier accessRequest, Identifier identity) {
-		Document metadata = mStandardMetaFactory.createRole("employee");
+	private static void addRole(Identifier accessRequest, Identifier identity) {
+		Document metadata = mf.createRole("employee");
 		PublishElement publishEl;
-		if(mIsUpdate){
+		if(isUpdate){
 			publishEl = Requests.createPublishUpdate(accessRequest, identity, metadata, MetadataLifetime.forever);
 		} else {
 			PublishDelete publishDelete = Requests.createPublishDelete(accessRequest, identity, "meta:role");
 			publishDelete.addNamespaceDeclaration(IfmapStrings.STD_METADATA_PREFIX,	IfmapStrings.STD_METADATA_NS_URI);
 			publishEl = publishDelete;
 		}
-		mPublishRequest.addPublishElement(publishEl);
+		publishRequest.addPublishElement(publishEl);
 	}
 
 	/**
@@ -259,18 +221,18 @@ public class Pdp {
 	 * @param accessRequest
 	 * @param pdpDevice
 	 */
-	private void addDevChar(Identifier accessRequest, Identifier pdpDevice) {
+	private static void addDevChar(Identifier accessRequest, Identifier pdpDevice) {
 		Calendar cal = Calendar.getInstance();
-		Document metadata = mStandardMetaFactory.createDevChar("manufacturer1", "model1", "Linux", "3.0.0", "pdp", Common.getTimeAsXsdDateTime(cal.getTime()), "TNC Server", "TPM Assessment");
+		Document metadata = mf.createDevChar("manufacturer1", "model1", "Linux", "3.0.0", "pdp", Common.getTimeAsXsdDateTime(cal.getTime()), "TNC Server", "TPM Assessment");
 		PublishElement publishEl;
-		if(mIsUpdate){
+		if(isUpdate){
 			publishEl = Requests.createPublishUpdate(accessRequest, pdpDevice, metadata, MetadataLifetime.forever);
 		} else {
 			PublishDelete publishDelete = Requests.createPublishDelete(accessRequest, pdpDevice, "meta:device-characteristic");
 			publishDelete.addNamespaceDeclaration(IfmapStrings.STD_METADATA_PREFIX,	IfmapStrings.STD_METADATA_NS_URI);
 			publishEl = publishDelete;
 		}
-		mPublishRequest.addPublishElement(publishEl);
+		publishRequest.addPublishElement(publishEl);
 	}
 
 	/**
@@ -280,17 +242,17 @@ public class Pdp {
 	 * @param accessRequest
 	 * @param endpointDevice
 	 */
-	private void addDevAttr(Identifier accessRequest, Identifier endpointDevice) {
-		Document metadata = mStandardMetaFactory.createDevAttr("looks pretty");
+	private static void addDevAttr(Identifier accessRequest, Identifier endpointDevice) {
+		Document metadata = mf.createDevAttr("looks pretty");
 		PublishElement publishEl;
-		if(mIsUpdate){
+		if(isUpdate){
 			publishEl = Requests.createPublishUpdate(accessRequest, endpointDevice, metadata, MetadataLifetime.forever);
 		} else {
 			PublishDelete publishDelete = Requests.createPublishDelete(accessRequest, endpointDevice, "meta:device-attribute");
 			publishDelete.addNamespaceDeclaration(IfmapStrings.STD_METADATA_PREFIX,	IfmapStrings.STD_METADATA_NS_URI);
 			publishEl = publishDelete;
 		}
-		mPublishRequest.addPublishElement(publishEl);
+		publishRequest.addPublishElement(publishEl);
 	}
 
 	/**
@@ -298,17 +260,17 @@ public class Pdp {
 	 *
 	 * @param accessRequest
 	 */
-	private void addCap(Identifier accessRequest) {
-		Document metadata = mStandardMetaFactory.createCapability("trustworthy, for sure!");
+	private static void addCap(Identifier accessRequest) {
+		Document metadata = mf.createCapability("trustworthy, for sure!");
 		PublishElement publishEl;
-		if(mIsUpdate){
+		if(isUpdate){
 			publishEl = Requests.createPublishUpdate(accessRequest, metadata, MetadataLifetime.forever);
 		} else {
 			PublishDelete publishDelete = Requests.createPublishDelete(accessRequest, "meta:capability");
 			publishDelete.addNamespaceDeclaration(IfmapStrings.STD_METADATA_PREFIX,	IfmapStrings.STD_METADATA_NS_URI);
 			publishEl = publishDelete;
 		}
-		mPublishRequest.addPublishElement(publishEl);
+		publishRequest.addPublishElement(publishEl);
 	}
 
 	/**
@@ -319,17 +281,17 @@ public class Pdp {
 	 * @param accessRequest
 	 * @param identity
 	 */
-	private void addAuthAs(Identifier accessRequest, Identifier identity) {
-		Document metadata = mStandardMetaFactory.createAuthAs();
+	private static void addAuthAs(Identifier accessRequest, Identifier identity) {
+		Document metadata = mf.createAuthAs();
 		PublishElement publishEl;
-		if(mIsUpdate){
+		if(isUpdate){
 			publishEl = Requests.createPublishUpdate(accessRequest, identity, metadata, MetadataLifetime.forever);
 		} else {
 			PublishDelete publishDelete = Requests.createPublishDelete(accessRequest, identity, "meta:authenticated-as");
 			publishDelete.addNamespaceDeclaration(IfmapStrings.STD_METADATA_PREFIX,	IfmapStrings.STD_METADATA_NS_URI);
 			publishEl = publishDelete;
 		}
-		mPublishRequest.addPublishElement(publishEl);
+		publishRequest.addPublishElement(publishEl);
 	}
 
 	/**
@@ -339,17 +301,17 @@ public class Pdp {
 	 * @param accessRequest
 	 * @param pdpDevice
 	 */
-	private void addAuthBy(Identifier accessRequest, Identifier pdpDevice) {
-		Document metadata = mStandardMetaFactory.createAuthBy();
+	private static void addAuthBy(Identifier accessRequest, Identifier pdpDevice) {
+		Document metadata = mf.createAuthBy();
 		PublishElement publishEl;
-		if(mIsUpdate){
+		if(isUpdate){
 			publishEl = Requests.createPublishUpdate(accessRequest, pdpDevice, metadata, MetadataLifetime.forever);
 		} else {
 			PublishDelete publishDelete = Requests.createPublishDelete(accessRequest, pdpDevice, "meta:authenticated-by");
 			publishDelete.addNamespaceDeclaration(IfmapStrings.STD_METADATA_PREFIX,	IfmapStrings.STD_METADATA_NS_URI);
 			publishEl = publishDelete;
 		}
-		mPublishRequest.addPublishElement(publishEl);
+		publishRequest.addPublishElement(publishEl);
 	}
 
 	/**
@@ -360,17 +322,17 @@ public class Pdp {
 	 * @param accessRequest
 	 * @param ipAddress
 	 */
-	private void addArIp(Identifier accessRequest, Identifier ipAddress) {
-		Document metadata = mStandardMetaFactory.createArIp();
+	private static void addArIp(Identifier accessRequest, Identifier ipAddress) {
+		Document metadata = mf.createArIp();
 		PublishElement publishEl;
-		if(mIsUpdate){
+		if(isUpdate){
 			publishEl = Requests.createPublishUpdate(accessRequest, ipAddress, metadata, MetadataLifetime.forever);
 		} else {
 			PublishDelete publishDelete = Requests.createPublishDelete(accessRequest, ipAddress, "meta:access-request-ip");
 			publishDelete.addNamespaceDeclaration(IfmapStrings.STD_METADATA_PREFIX,	IfmapStrings.STD_METADATA_NS_URI);
 			publishEl = publishDelete;
 		}
-		mPublishRequest.addPublishElement(publishEl);
+		publishRequest.addPublishElement(publishEl);
 	}
 
 	/**
@@ -381,17 +343,17 @@ public class Pdp {
 	 * @param accessRequest
 	 * @param macAddress
 	 */
-	private void addArMac(Identifier accessRequest, Identifier macAddress) {
-		Document metadata = mStandardMetaFactory.createArMac();
+	private static void addArMac(Identifier accessRequest, Identifier macAddress) {
+		Document metadata = mf.createArMac();
 		PublishElement publishEl;
-		if(mIsUpdate){
+		if(isUpdate){
 			publishEl = Requests.createPublishUpdate(accessRequest, macAddress, metadata, MetadataLifetime.forever);
 		} else {
 			PublishDelete publishDelete = Requests.createPublishDelete(accessRequest, macAddress, "meta:access-request-mac");
 			publishDelete.addNamespaceDeclaration(IfmapStrings.STD_METADATA_PREFIX,	IfmapStrings.STD_METADATA_NS_URI);
 			publishEl = publishDelete;
 		}
-		mPublishRequest.addPublishElement(publishEl);
+		publishRequest.addPublishElement(publishEl);
 	}
 
 	/**
@@ -400,71 +362,56 @@ public class Pdp {
 	 * @param accessRequest
 	 * @param endpointDevice
 	 */
-	private void addArDevice(Identifier accessRequest, Identifier endpointDevice) {
-		Document metadata = mStandardMetaFactory.createArDev();
+	private static void addArDevice(Identifier accessRequest, Identifier endpointDevice) {
+		Document metadata = mf.createArDev();
 		PublishElement publishEl;
-		if(mIsUpdate){
+		if(isUpdate){
 			publishEl = Requests.createPublishUpdate(accessRequest, endpointDevice, metadata, MetadataLifetime.forever);
 		} else {
 			PublishDelete publishDelete = Requests.createPublishDelete(accessRequest, endpointDevice, "meta:access-request-device");
 			publishDelete.addNamespaceDeclaration(IfmapStrings.STD_METADATA_PREFIX,	IfmapStrings.STD_METADATA_NS_URI);
 			publishEl = publishDelete;
 		}
-		mPublishRequest.addPublishElement(publishEl);
+		publishRequest.addPublishElement(publishEl);
 	}
 
-	/**
-	 * @param args - this tool only expects 4 mandatory parameters<br/>
-	 * 				<ul>
-	 * 					<li>arg[0]: update|delete</li>
-	 * 					<li>arg[1]: username</li>
-	 * 					<li>arg[2]: ip</li>
-	 * 					<li>arg[3]: mac</li>
-	 * 				</ul>
-	 */
 	public static void main(String[] args) {
-		String op, username, ip, mac;
-		Config cfg;
-		// check number of mandatory command line arguments
-		if(args.length < MIN_ARGS){
-			Pdp.usage();
-			return;
-		}
+		command = "pdp";
+		
+		final String KEY_OPERATION = "publishOperation";
+		final String KEY_IP = "ip-address";
+		final String KEY_MAC = "mac-address";
+		final String KEY_ID = "username";
 
-		// parse mandatory command line arguments
-		op = args[0];
-		username = args[1];
-		ip = args[2];
-		mac = args[3];
-		if(Common.isUpdateorDelete(op) == false){
-			Pdp.usage();
-			return;
-		}
+		ArgumentParser parser = createDefaultParser();
+		parser.addArgument("publish-operation")
+			.type(String.class)
+			.dest(KEY_OPERATION)
+			.choices("update", "delete")
+			.help("the publish operation");
+		parser.addArgument("ip-address")
+			.type(String.class)
+			.dest(KEY_IP)
+			.help("value of the ip-address identifier");
+		parser.addArgument("mac-address")
+			.type(String.class)
+			.dest(KEY_MAC)
+			.help("value of the mac identifier");
+		parser.addArgument("username")
+			.type(String.class)
+			.dest(KEY_ID)
+			.help("username value of the identity identifier");
 
-		// check and load optional parameters
-		cfg = Common.checkAndLoadParams(args, EXPECTED_ARGS);
-		System.out.println(CMD + " uses config " + cfg);
+		parseParameters(parser, args);
 
-		// publish
-		try {
-			// create pdp
-			Pdp pdp = new Pdp(op, username, ip, mac, cfg);
-			pdp.publish();
-		} catch (InitializationException e) {
-			System.out.println(e.getDescription() + " " + e.getMessage());
-		} catch (IfmapErrorResult e) {
-			System.out.println(e.getErrorString());
-		} catch (IfmapException e) {
-			System.out.println(e.getDescription() + " " + e.getMessage());
-		} catch (FileNotFoundException e) {
-			System.out.println(e.getMessage());
-		}
-	}
-
-	private static void usage() {
-		System.out.println("usage:\n" +
-				"\t" + Pdp.CMD + " update|delete username ip mac " +
-				"[url user pass truststore truststorePass]");
-		System.out.println(Common.USAGE);
+		printParameters(KEY_OPERATION, new String[] {KEY_IP, KEY_MAC, KEY_ID});
+		
+		isUpdate = isUpdate(KEY_OPERATION);
+		ip = resource.getString(KEY_IP);
+		mac = resource.getString(KEY_MAC);
+		username = resource.getString(KEY_ID);
+		
+		publishRequest = Requests.createPublishReq();
+		publish();
 	}
 }

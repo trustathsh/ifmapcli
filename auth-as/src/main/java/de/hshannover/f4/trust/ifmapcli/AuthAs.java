@@ -38,23 +38,12 @@
  */
 package de.hshannover.f4.trust.ifmapcli;
 
-import java.io.InputStream;
-
-import javax.net.ssl.TrustManager;
-
-import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
-import net.sourceforge.argparse4j.inf.ArgumentParserException;
-import net.sourceforge.argparse4j.inf.Namespace;
 
 import org.w3c.dom.Document;
 
-import de.hshannover.f4.trust.ifmapcli.common.Common;
-import de.hshannover.f4.trust.ifmapcli.common.ParserUtil;
-import de.hshannover.f4.trust.ifmapj.IfmapJ;
-import de.hshannover.f4.trust.ifmapj.IfmapJHelper;
+import de.hshannover.f4.trust.ifmapcli.common.AbstractClient;
 import de.hshannover.f4.trust.ifmapj.binding.IfmapStrings;
-import de.hshannover.f4.trust.ifmapj.channel.SSRC;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifier;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifiers;
 import de.hshannover.f4.trust.ifmapj.identifier.IdentityType;
@@ -63,7 +52,6 @@ import de.hshannover.f4.trust.ifmapj.messages.PublishDelete;
 import de.hshannover.f4.trust.ifmapj.messages.PublishRequest;
 import de.hshannover.f4.trust.ifmapj.messages.PublishUpdate;
 import de.hshannover.f4.trust.ifmapj.messages.Requests;
-import de.hshannover.f4.trust.ifmapj.metadata.StandardIfmapMetadataFactory;
 
 /**
  * A simple tool that publishes or deletes authenticated-as metadata.<br/>
@@ -73,20 +61,16 @@ import de.hshannover.f4.trust.ifmapj.metadata.StandardIfmapMetadataFactory;
  * @author ib
  *
  */
-public class AuthAs {
-	final static String CMD = "auth-as";
-
-	// in order to create the necessary objects, make use of the appropriate
-	// factory classes
-	private static StandardIfmapMetadataFactory mf = IfmapJ
-			.createStandardMetadataFactory();
+public class AuthAs extends AbstractClient {
 
 	public static void main(String[] args) {
+		command = "auth-as";
+		
 		final String KEY_OPERATION = "publishOperation";
 		final String KEY_AR = "accessRequest";
 		final String KEY_ID = "username";
 
-		ArgumentParser parser = ArgumentParsers.newArgumentParser(CMD);
+		ArgumentParser parser = createDefaultParser();
 		parser.addArgument("publish-operation")
 			.type(String.class)
 			.dest(KEY_OPERATION)
@@ -100,68 +84,37 @@ public class AuthAs {
 			.type(String.class)
 			.dest(KEY_ID)
 			.help("username value of the identity identifier");
-		ParserUtil.addConnectionArgumentsTo(parser);
-		ParserUtil.addCommonArgumentsTo(parser);
 
-		Namespace res = null;
-		try {
-			res = parser.parseArgs(args);
-		} catch (ArgumentParserException e) {
-			parser.handleError(e);
-			System.exit(1);
-		}
+		parseParameters(parser, args);
+		
+		printParameters(KEY_OPERATION, new String[] {KEY_AR, KEY_ID});
 
-		if (res.getBoolean(ParserUtil.VERBOSE)) {
-			StringBuilder sb = new StringBuilder();
-			
-			sb.append(CMD).append(" ");
-			sb.append(res.getString(KEY_OPERATION)).append(" ");
-			sb.append(KEY_AR).append("=").append(res.getString(KEY_AR)).append(" ");
-			sb.append(KEY_ID).append("=").append(res.getString(KEY_ID)).append(" ");
-			
-			ParserUtil.printConnectionArguments(sb, res);
-			System.out.println(sb.toString());
-		}
-
-		PublishRequest req;
-		PublishUpdate publishUpdate;
-		PublishDelete publishDelete;
+		String ar = resource.getString(KEY_AR);
+		String id = resource.getString(KEY_ID);
 
 		// prepare identifiers
-		Identifier arIdentifier = Identifiers.createAr(res.getString(KEY_AR));
-        Identifier idIdentifier = Identifiers.createIdentity(IdentityType.userName, res.getString(KEY_ID));
+		Identifier arIdentifier = Identifiers.createAr(ar);
+        Identifier idIdentifier = Identifiers.createIdentity(IdentityType.userName, id);
 
 		// prepare metadata
 		Document metadata = mf.createAuthAs();
 
+		PublishRequest request;
 		// update or delete
-		if (res.getString(KEY_OPERATION).equals("update")) {
-			publishUpdate = Requests.createPublishUpdate(arIdentifier, idIdentifier,
+		if (isUpdate(KEY_OPERATION)) {
+			PublishUpdate publishUpdate = Requests.createPublishUpdate(arIdentifier, idIdentifier,
 					metadata, MetadataLifetime.forever);
-			req = Requests.createPublishReq(publishUpdate);
+			request = Requests.createPublishReq(publishUpdate);
 		} else {
-			publishDelete = Requests.createPublishDelete(arIdentifier, idIdentifier, "meta:authenticated-as");
+			String filter = "meta:authenticated-as";
+			PublishDelete publishDelete = Requests.createPublishDelete(arIdentifier, idIdentifier, filter);
 			publishDelete.addNamespaceDeclaration(IfmapStrings.STD_METADATA_PREFIX,
 					IfmapStrings.STD_METADATA_NS_URI);
-			req = Requests.createPublishReq(publishDelete);
+			request = Requests.createPublishReq(publishDelete);
 		}
 
 		// publish
-		try {
-			InputStream is = Common.prepareTruststoreIs(res.getString(ParserUtil.KEYSTORE_PATH));
-			TrustManager[] tms = IfmapJHelper.getTrustManagers(is, res.getString(ParserUtil.KEYSTORE_PASS));
-			SSRC ssrc = IfmapJ.createSSRC(
-				res.getString(ParserUtil.URL),
-				res.getString(ParserUtil.USER),
-				res.getString(ParserUtil.PASS),
-				tms);
-			ssrc.newSession();
-			ssrc.publish(req);
-			ssrc.endSession();
-		} catch (Exception e) {
-			e.printStackTrace();
-			System.exit(-1);
-		}
+		publishIfmapData(request);
 	}
 }
 

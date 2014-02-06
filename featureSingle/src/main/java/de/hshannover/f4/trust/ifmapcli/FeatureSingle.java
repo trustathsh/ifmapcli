@@ -38,31 +38,23 @@
  */
 package de.hshannover.f4.trust.ifmapcli;
 
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Vector;
 
-import javax.net.ssl.TrustManager;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
-import net.sourceforge.argparse4j.inf.ArgumentParserException;
-import net.sourceforge.argparse4j.inf.Namespace;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import de.hshannover.f4.trust.ifmapcli.common.AbstractClient;
 import de.hshannover.f4.trust.ifmapcli.common.Common;
-import de.hshannover.f4.trust.ifmapcli.common.ParserUtil;
-import de.hshannover.f4.trust.ifmapj.IfmapJ;
-import de.hshannover.f4.trust.ifmapj.IfmapJHelper;
 import de.hshannover.f4.trust.ifmapj.binding.IfmapStrings;
 import de.hshannover.f4.trust.ifmapj.channel.SSRC;
 import de.hshannover.f4.trust.ifmapj.identifier.Device;
@@ -92,9 +84,7 @@ import de.hshannover.f4.trust.ifmapj.messages.Requests;
  * @author ib
  *
  */
-public class FeatureSingle {
-
-	final static String CMD = "featureSingle";
+public class FeatureSingle extends AbstractClient {
 
 	final static String OTHER_TYPE_DEFINITION = "32939:category";
 	final static String NAMESPACE = "http://www.esukom.de/2012/ifmap-metadata/1";
@@ -248,6 +238,8 @@ public class FeatureSingle {
 	}
 
 	public static void main(String[] args) {
+		command = "featureSingle";
+		
 		final String KEY_OPERATION = "publishOperation";
 		final String KEY_PURGE = "purge";
 		final String KEY_FEATURE_ID = "feature-id";
@@ -258,7 +250,7 @@ public class FeatureSingle {
 		final String KEY_CTX_POSITION = "ctxp-position";
 		final String KEY_CTX_OTHER_DEVICES = "ctxp-other-devices";
 
-		ArgumentParser parser = ArgumentParsers.newArgumentParser(CMD);
+		ArgumentParser parser = createDefaultParser();
 		parser.addArgument("publish-operation")
 			.type(String.class)
 			.dest(KEY_OPERATION)
@@ -305,45 +297,22 @@ public class FeatureSingle {
 			.dest(KEY_CTX_OTHER_DEVICES)
 			.setDefault("none")
 			.help("context: other devices");
-		ParserUtil.addConnectionArgumentsTo(parser);
-		ParserUtil.addCommonArgumentsTo(parser);
+		
+		parseParameters(parser, args);
+		
+		printParameters(KEY_OPERATION, new String[] {KEY_FEATURE_ID, KEY_FEATURE_TYPE, KEY_FEATURE_VALUE, KEY_DEVICE_NAME, KEY_CTX_TIMESTAMP, KEY_CTX_POSITION, KEY_CTX_OTHER_DEVICES});
 
-		Namespace res = null;
-		try {
-			res = parser.parseArgs(args);
-		} catch (ArgumentParserException e) {
-			parser.handleError(e);
-			System.exit(1);
-		}
+		mFullQualifiedInstanceAwareFeatureId = resource.getString(KEY_FEATURE_ID);
+		mType = resource.get(KEY_FEATURE_TYPE);
+		mValue = resource.getString(KEY_FEATURE_VALUE);
+		mIsUpdate = resource.getString(KEY_OPERATION).equals("update") ? true : false;
+		mDevice = resource.getString(KEY_DEVICE_NAME);
 
-		if (res.getBoolean(ParserUtil.VERBOSE)) {
-			StringBuilder sb = new StringBuilder();
-			
-			sb.append(CMD).append(" ");
-			sb.append(res.getString(KEY_OPERATION)).append(" ");
-			sb.append(KEY_FEATURE_ID).append("=").append(res.getString(KEY_FEATURE_ID)).append(" ");
-			sb.append(KEY_FEATURE_TYPE).append("=").append(res.get(KEY_FEATURE_TYPE)).append(" ");
-			sb.append(KEY_FEATURE_VALUE).append("=").append(res.getString(KEY_FEATURE_VALUE)).append(" ");
-			sb.append(KEY_DEVICE_NAME).append("=").append(res.getString(KEY_DEVICE_NAME)).append(" ");
-			sb.append(KEY_CTX_TIMESTAMP).append("=").append(res.getString(KEY_CTX_TIMESTAMP)).append(" ");
-			sb.append(KEY_CTX_POSITION).append("=").append(res.getString(KEY_CTX_POSITION)).append(" ");
-			sb.append(KEY_CTX_OTHER_DEVICES).append("=").append(res.getString(KEY_CTX_OTHER_DEVICES)).append(" ");
-			
-			ParserUtil.printConnectionArguments(sb, res);
-			System.out.println(sb.toString());
-		}
+		mCtxTime = resource.getString(KEY_CTX_TIMESTAMP);
+		mCtxPos = resource.getString(KEY_CTX_POSITION);
+		mCtxOtherDevices = resource.getString(KEY_CTX_OTHER_DEVICES);
 
-		mFullQualifiedInstanceAwareFeatureId = res.getString(KEY_FEATURE_ID);
-		mType = res.get(KEY_FEATURE_TYPE);
-		mValue = res.getString(KEY_FEATURE_VALUE);
-		mIsUpdate = res.getString(KEY_OPERATION).equals("update") ? true : false;
-		mDevice = res.getString(KEY_DEVICE_NAME);
-
-		mCtxTime = res.getString(KEY_CTX_TIMESTAMP);
-		mCtxPos = res.getString(KEY_CTX_POSITION);
-		mCtxOtherDevices = res.getString(KEY_CTX_OTHER_DEVICES);
-
-		mDeleteSubCatMetadata = res.getBoolean(KEY_PURGE);
+		mDeleteSubCatMetadata = resource.getBoolean(KEY_PURGE);
 		
 		mDocumentBuilderFactory = DocumentBuilderFactory.newInstance();
 
@@ -357,13 +326,7 @@ public class FeatureSingle {
 		preparePublishUpdatesOrDeletes();
 		
 		try {
-			InputStream is = Common.prepareTruststoreIs(res.getString(ParserUtil.KEYSTORE_PATH));
-			TrustManager[] tms = IfmapJHelper.getTrustManagers(is, res.getString(ParserUtil.KEYSTORE_PASS));
-			SSRC ssrc = IfmapJ.createSSRC(
-				res.getString(ParserUtil.URL),
-				res.getString(ParserUtil.USER),
-				res.getString(ParserUtil.PASS),
-				tms);
+			SSRC ssrc = createSSRC();
 			ssrc.newSession();
 			PublishRequest req = Requests.createPublishReq();
 			

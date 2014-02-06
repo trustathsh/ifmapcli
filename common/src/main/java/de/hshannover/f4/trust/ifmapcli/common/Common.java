@@ -63,68 +63,6 @@ import org.w3c.dom.Document;
  */
 public class Common {
 
-	public static final String USAGE =
-			"\nYou may also set the enviroment variables\n" +
-			"IFMAP_URL, IFMAP_USER, IFMAP_PASS, IFMAP_TRUSTSTORE_PATH and IFMAP_TRUSTSTORE_PASS\n" +
-			"\nIf you don't specify them, the following default values will be used:\n" +
-			"\tIFMAP_URL=" + Config.DEFAULT_URL + "\n" +
-			"\tIFMAP_USER=" + Config.DEFAULT_USER + "\n" +
-			"\tIFMAP_PASS=" + Config.DEFAULT_PASS + "\n" +
-			"\tIFMAP_TRUSTSTORE_PATH=" + Config.DEFAULT_TRUSTSTORE_PATH + "\n" +
-			"\tIFMAP_TRUSTSTORE_PASS=" + Config.DEFAULT_TRUSTSTORE_PASS;
-
-	/**
-	 * Check if the given op String equals 'update'.
-	 *
-	 * @param op
-	 * @return
-	 */
-	public static boolean isUpdate(String op){
-		return ("update".equals(op));
-	}
-
-	/**
-	 * Check if the given op String equals 'delete'.
-	 *
-	 * @param op
-	 * @return
-	 */
-	public static boolean isDelete(String op){
-		return ("delete".equals(op));
-	}
-
-	/**
-	 * Check if the given op String equals 'update' or 'delete'.
-	 *
-	 * @param op
-	 * @return
-	 */
-	public static boolean isUpdateorDelete(String op){
-		return Common.isUpdate(op) || Common.isDelete(op);
-	}
-
-	/**
-	 * Checks for the necessary parameters that were provided by args or as<br/>
-	 * environment variables.
-	 *
-	 * @param args - the command line arguments
-	 * @param expectedArgc - expected number of command line arguments (if there
-	 * 						are any)
-	 * @return the loaded configuration
-	 */
-	public static Config checkAndLoadParams(String[] args, int expectedArgc) {
-		Config cfg;
-
-		if (args.length == expectedArgc){
-			// load parameters from args
-			cfg = loadCmdParams(args);
-		} else {
-			cfg = loadEnvParams();
-		}
-
-		return cfg;
-	}
-
 	/**
 	 * Prepare access to truststore by creating an InputStream. This supports<br/>
 	 * both truststores that reside within the packaged jar as well as those<br/>
@@ -164,48 +102,6 @@ public class Common {
 		String offsetA = offset.substring(0, 3);
 		String offsetB = offset.substring(3);
 		return one + offsetA + ":" + offsetB;
-	}
-
-	/**
-	 * Load parameters from command line and create {@link Config} object.<br/>
-	 * This assumes that the last 5 parameters of any command that uses this<br/>
-	 * method are: url, user, pass, truststorePath, truststorePass
-	 * @param args
-	 * @return
-	 */
-	private static Config loadCmdParams(String[] args) {
-		String url = args[args.length-5];
-		String user = args[args.length-4];
-		String pass = args[args.length-3];
-		String truststorePath = args[args.length-2];
-		String truststorePass = args[args.length-1];
-		return new Config(url, user, pass, truststorePath, truststorePass);
-	}
-
-	/**
-	 * Load parameters from environment variables and create {@link Config} object.
-	 * @param args
-	 * @return
-	 */
-	public static Config loadEnvParams() {
-		// create default configuration
-		Config cfg = new Config();
-
-		// get environment variables
-		String url = System.getenv("IFMAP_URL");
-		String user = System.getenv("IFMAP_USER");
-		String pass = System.getenv("IFMAP_PASS");
-		String truststorePath = System.getenv("IFMAP_TRUSTSTORE_PATH");
-		String truststorePass = System.getenv("IFMAP_TRUSTSTORE_PASS");
-
-		// set them if they were defined
-		if (url != null) cfg.setUrl(url);
-		if (user != null) cfg.setUser(user);
-		if (pass != null) cfg.setPass(pass);
-		if (truststorePath != null) cfg.setTruststorePath(truststorePath);
-		if (truststorePass != null) cfg.setTruststorePass(truststorePass);
-
-		return cfg;
 	}
 
 	/**
