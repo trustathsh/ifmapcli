@@ -45,6 +45,9 @@ package de.hshannover.f4.trust.ifmapcli.common;
  *
  */
 public class DefaultConfig {
+
+	public static final String IFMAP_CLI_VERSION = "${project.version}";
+
 	public static final String DEFAULT_URL = "https://localhost:8443";
 	public static final String DEFAULT_USER = "test";
 	public static final String DEFAULT_PASS = "test";

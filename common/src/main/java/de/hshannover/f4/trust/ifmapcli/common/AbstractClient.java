@@ -7,17 +7,17 @@
  *    | | | |  | |_| \__ \ |_| | (_| |  _  |\__ \|  _  |
  *    |_| |_|   \__,_|___/\__|\ \__,_|_| |_||___/|_| |_|
  *                             \____/
- * 
+ *
  * =====================================================
- * 
+ *
  * Hochschule Hannover
  * (University of Applied Sciences and Arts, Hannover)
  * Faculty IV, Dept. of Computer Science
  * Ricklinger Stadtweg 118, 30459 Hannover, Germany
- * 
+ *
  * Email: trust@f4-i.fh-hannover.de
  * Website: http://trust.f4.hs-hannover.de
- * 
+ *
  * This file is part of ifmapcli (role), version 0.0.6, implemented by the Trust@HsH
  * research group at the Hochschule Hannover.
  * %%
@@ -26,9 +26,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -67,7 +67,7 @@ import de.hshannover.f4.trust.ifmapj.metadata.StandardIfmapMetadataFactory;
 public abstract class AbstractClient {
 
 	public static final String KEY_OPERATION = "publishOperation";
-	
+
 	// Identifier
 	public static final String KEY_ACCESS_REQUEST = "accessRequest";
 	public static final String KEY_DEVICE = "device";
@@ -78,16 +78,16 @@ public abstract class AbstractClient {
 	public static final String KEY_IDENTIFIER_TYPE = "identifierType";
 	public static final String KEY_OTHER_IDENTIFIER_TYPE = "other-identifier-type";
 	public static final String KEY_OTHER_IDENTIFIER = "other-identifier";
-	
+
 	// Metadata
 	public static final String KEY_ADMINISTRATIVE_DOMAIN = "administrative-domain";
 	public static final String KEY_ROLE = "role";
 	public static final String KEY_QUALIFIER = "qualifier";
 	public static final String KEY_CAP_NAME = "capability";
-	
+
 	// device-attribute
 	public static final String KEY_ATTR = "device-attribute";
-	
+
 	// device-characteristic
 	public static final String KEY_MANUFACTURER = "manufacturer";
 	public static final String KEY_MODEL = "model";
@@ -97,7 +97,7 @@ public abstract class AbstractClient {
 	public static final String KEY_CHARACTERISTIC_DISCOVERED_TIME = "discovered-time";
 	public static final String KEY_CHARACTERISTIC_DISCOVERER_ID = "discoverer-id";
 	public static final String KEY_CHARACTERISTIC_DISCOVERY_METHOD = "discovery-method";
-	
+
 	// search and subscribe
 	public static final String KEY_MATCH_LINKS = "matchLinks";
 	public static final String KEY_MAX_DEPTH = "maxDepth";
@@ -106,20 +106,20 @@ public abstract class AbstractClient {
 	public static final String KEY_TERMINAL_IDENTIFIER_TYPE = "terminal-identifier-type";
 	public static final String KEY_NAMESPACE_PREFIX = "namespacePrefix";
 	public static final String KEY_NAMESPACE_URI = "namespaceUri";
-	
+
 	// purge
 	public static final String KEY_PUBLISHER_ID = "publisherId";
-	
+
 	// perf1
 	public static final String KEY_NUMBER_REQUESTS = "requests";
 	public static final String KEY_NUMBER_UPDATES = "updates";
 	public static final String KEY_NUMBER_SPRINTS = "sprint-size";
-	
+
 	// layer-2-information
 	public static final String KEY_VLAN_NUMBER = "vlan-number";
 	public static final String KEY_VLAN_NAME = "vlan-name";
 	public static final String KEY_PORT = "port";
-	
+
 	// event
 	public static final String KEY_EVENT_NAME = "event-name";
 	// TODO add discovered-time
@@ -135,12 +135,12 @@ public abstract class AbstractClient {
 
 	// feature
 	public static final String KEY_TARGET_DEVICE = "target-device";
-	
+
 	// feature2
 	public static final String KEY_DEPTH = "depth";
 	public static final String KEY_MAX_CHILDS = "max-childs-per-category";
 	public static final String KEY_MAX_FEATURES = "max-features-per-category";
-	
+
 	// featureSingle
 	public static final String KEY_PURGE = "purge";
 	public static final String KEY_FEATURE_ID = "feature-id";
@@ -149,11 +149,11 @@ public abstract class AbstractClient {
 	public static final String KEY_CTX_TIMESTAMP = "ctxp-timestamp";
 	public static final String KEY_CTX_POSITION = "ctxp-position";
 	public static final String KEY_CTX_OTHER_DEVICES = "ctxp-other-devices";
-	
+
 	protected static String command;
-	
+
 	protected static Namespace resource;
-	
+
 	// in order to create the necessary objects, make use of the appropriate
 	// factory classes
 	protected static StandardIfmapMetadataFactory mf = IfmapJ
@@ -161,14 +161,16 @@ public abstract class AbstractClient {
 
 	protected static ArgumentParser createDefaultParser() {
 		ArgumentParser parser = ArgumentParsers.newArgumentParser(command);
-		
+
+		parser.description("ifmapcli version " + DefaultConfig.IFMAP_CLI_VERSION);
+
 		parser.defaultHelp(true);
 		ParserUtil.addConnectionArgumentsTo(parser);
 		ParserUtil.addCommonArgumentsTo(parser);
-		
+
 		return parser;
 	}
-	
+
 	protected static void parseParameters(ArgumentParser parser, String[] arguments) {
 		try {
 			resource = parser.parseArgs(arguments);
@@ -177,30 +179,30 @@ public abstract class AbstractClient {
 			System.exit(1);
 		}
 	}
-	
+
 	protected static void printParameters(String operation, String[] keys) {
 		if (resource.getBoolean(ParserUtil.VERBOSE)) {
 			StringBuilder sb = new StringBuilder();
-			
+
 			sb.append(command).append(" ");
-			if (operation != null) {				
+			if (operation != null) {
 				sb.append(resource.getString(operation)).append(" ");
 			}
-			if (keys != null) {				
+			if (keys != null) {
 				for (String key : keys) {
 					appendIfNotNull(sb, resource, key);
 				}
 			}
-			
+
 			appendConnectionArguments(sb, resource);
 			System.out.println(sb.toString());
 		}
 	}
-	
+
 	protected static void printParameters(String[] keys) {
 		printParameters(null, keys);
 	}
-	
+
 	protected static SSRC createSSRC() throws FileNotFoundException, InitializationException {
 		InputStream is = Common.prepareTruststoreIs(resource.getString(ParserUtil.KEYSTORE_PATH));
 		TrustManager[] tms = IfmapJHelper.getTrustManagers(is, resource.getString(ParserUtil.KEYSTORE_PASS));
@@ -209,12 +211,12 @@ public abstract class AbstractClient {
 			resource.getString(ParserUtil.USER),
 			resource.getString(ParserUtil.PASS),
 			tms);
-		
+
 		return ssrc;
 	}
-	
+
 	protected static void publishIfmapData(PublishRequest request) {
-		try {			
+		try {
 			SSRC ssrc = createSSRC();
 			ssrc.newSession();
 			ssrc.publish(request);
@@ -224,19 +226,19 @@ public abstract class AbstractClient {
 			System.exit(-1);
 		}
 	}
-	
+
 	protected static boolean isUpdate(String key) {
 		return resource.getString(key).equals("update");
 	}
-	
+
 	protected static boolean isNotify(String key) {
 		return resource.getString(key).equals("notify");
 	}
-	
+
 	protected static boolean isDelete(String key) {
 		return resource.getString(key).equals("delete");
 	}
-	
+
 	protected static Identifier getIdentifier(IdType type, String name) {
 		switch (type) {
 		case ipv4:
@@ -256,7 +258,7 @@ public abstract class AbstractClient {
 			throw new RuntimeException("unknown identifier type '" + type + "'");
 		}
 	}
-	
+
 	public static void appendConnectionArguments(StringBuilder sb, Namespace res) {
 		appendIfNotNull(sb, res, ParserUtil.URL);
 		appendIfNotNull(sb, res, ParserUtil.USER);
@@ -264,11 +266,11 @@ public abstract class AbstractClient {
 		appendIfNotNull(sb, res, ParserUtil.KEYSTORE_PATH);
 		appendIfNotNull(sb, res, ParserUtil.KEYSTORE_PASS);
 	}
-	
+
 	public static void appendIfNotNull(StringBuilder sb, Namespace resource,
 			String key) {
 		Object property = resource.get(key);
-		if (property != null) {			
+		if (property != null) {
 			if (property instanceof String) {
 				sb.append(key).append("=").append(resource.getString(key)).append(" ");
 			} else if (property instanceof Integer) {
@@ -278,10 +280,10 @@ public abstract class AbstractClient {
 			}
 		}
 	}
-	
+
 	/**
 	 * Fetch {@link ResultItem} objects and print them to console
-	 * @param searchResult 
+	 * @param searchResult
 	 */
 	protected static void parseSearchResult(SearchResult searchResult) {
 
