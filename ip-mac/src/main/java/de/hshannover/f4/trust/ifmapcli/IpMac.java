@@ -78,7 +78,7 @@ public class IpMac extends AbstractClient {
 		
 		parseParameters(parser, args);
 		
-		printParameters(KEY_OPERATION, new String[] {KEY_IP, KEY_MAC});
+		printParameters(KEY_OPERATION, new String[] {KEY_IP, KEY_MAC, KEY_DHCP_SERVER});
 
 		String ip = resource.getString(KEY_IP);
 		String mac = resource.getString(KEY_MAC);
