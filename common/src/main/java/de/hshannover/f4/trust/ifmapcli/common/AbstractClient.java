@@ -149,6 +149,8 @@ public abstract class AbstractClient {
 	public static final String KEY_CTX_TIMESTAMP = "ctxp-timestamp";
 	public static final String KEY_CTX_POSITION = "ctxp-position";
 	public static final String KEY_CTX_OTHER_DEVICES = "ctxp-other-devices";
+
+	public static final String KEY_DHCP_SERVER = "dhcp-server";
 	
 	protected static String command;
 	

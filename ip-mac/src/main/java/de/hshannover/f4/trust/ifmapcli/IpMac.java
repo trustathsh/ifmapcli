@@ -73,14 +73,16 @@ public class IpMac extends AbstractClient {
 		ParserUtil.addPublishOperation(parser);
 		ParserUtil.addIpv4Address(parser);
 		ParserUtil.addMacAddress(parser);
-		// TODO start-time, end-time and dhcp-server name
-
+		ParserUtil.addDhcpServer(parser);
+		// TODO start-time, end-time
+		
 		parseParameters(parser, args);
 		
 		printParameters(KEY_OPERATION, new String[] {KEY_IP, KEY_MAC});
 
 		String ip = resource.getString(KEY_IP);
 		String mac = resource.getString(KEY_MAC);
+		String dhcpServer = resource.getString(KEY_DHCP_SERVER);
 		
 		// prepare identifiers
 		Identifier ipIdentifier = Identifiers.createIp4(ip);
@@ -91,7 +93,7 @@ public class IpMac extends AbstractClient {
 		Date startTime = new Date(); // now
 		Date endTime = new Date(startTime.getTime() + (1000*60*60*8)); // 8 hours later
 		Document metadata = mf.createIpMac(Common.getTimeAsXsdDateTime(startTime),
-				Common.getTimeAsXsdDateTime(endTime), "ip-mac-cli");
+				Common.getTimeAsXsdDateTime(endTime), dhcpServer);
 
 		PublishRequest request;
 		// update or delete

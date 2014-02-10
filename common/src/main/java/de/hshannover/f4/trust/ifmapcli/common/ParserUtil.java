@@ -432,4 +432,10 @@ public class ParserUtil {
 				.dest(AbstractClient.KEY_CTX_OTHER_DEVICES).setDefault("none")
 				.help("context: other devices");
 	}
+
+	public static void addDhcpServer(ArgumentParser parser) {
+		parser.addArgument("--dhcp-server", "-ds").type(String.class)
+		.dest(AbstractClient.KEY_DHCP_SERVER).setDefault("ip-mac-cli")
+		.help("name of the DHCP server");	
+	}
 }
