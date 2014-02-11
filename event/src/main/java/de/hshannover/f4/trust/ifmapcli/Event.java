@@ -46,9 +46,11 @@ import org.w3c.dom.Document;
 
 import de.hshannover.f4.trust.ifmapcli.common.AbstractClient;
 import de.hshannover.f4.trust.ifmapcli.common.Common;
+import de.hshannover.f4.trust.ifmapcli.common.IfmapjEnumConverter;
 import de.hshannover.f4.trust.ifmapcli.common.ParserUtil;
 import de.hshannover.f4.trust.ifmapcli.common.enums.EventType;
 import de.hshannover.f4.trust.ifmapcli.common.enums.IdType;
+import de.hshannover.f4.trust.ifmapcli.common.enums.Significance;
 import de.hshannover.f4.trust.ifmapj.binding.IfmapStrings;
 import de.hshannover.f4.trust.ifmapj.channel.SSRC;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifier;
@@ -58,7 +60,6 @@ import de.hshannover.f4.trust.ifmapj.messages.PublishNotify;
 import de.hshannover.f4.trust.ifmapj.messages.PublishRequest;
 import de.hshannover.f4.trust.ifmapj.messages.PublishUpdate;
 import de.hshannover.f4.trust.ifmapj.messages.Requests;
-import de.hshannover.f4.trust.ifmapj.metadata.Significance;
 
 /**
  * A simple tool that can publish event metadata.
@@ -82,20 +83,20 @@ public class Event extends AbstractClient {
 		
 		// event content
 		ParserUtil.addEventName(parser);
-		ParserUtil.addEventDiscovererId(parser);
-		ParserUtil.addEventMagnitude(parser);
-		ParserUtil.addEventConfidence(parser);
-		ParserUtil.addEventSignificance(parser);
+		ParserUtil.addDiscovererId(parser);
+		ParserUtil.addMagnitude(parser);
+		ParserUtil.addConfidence(parser);
+		ParserUtil.addSignificance(parser);
 		ParserUtil.addEventType(parser);
-		ParserUtil.addEventOtherTypeDefinition(parser);
-		ParserUtil.addEventInformation(parser);
+		ParserUtil.addOtherTypeDefinition(parser);
+		ParserUtil.addInformation(parser);
 		ParserUtil.addEventVulnerabilityUri(parser);
 		
 		parseParameters(parser, args);
 
 		printParameters(KEY_OPERATION, new String[] {KEY_IDENTIFIER_TYPE, KEY_IDENTIFIER, KEY_EVENT_NAME,
-				KEY_EVENT_DISCOVERER_ID, KEY_MAGNITUDE, KEY_CONFIDENCE, KEY_SIGNIFICANCE, KEY_EVENT_TYPE,
-				KEY_EVENT_OTHERTYPE_DEFINITION, KEY_INFORMATION, KEY_VULNERABILITY_URI});
+				KEY_DISCOVERER_ID, KEY_MAGNITUDE, KEY_CONFIDENCE, KEY_SIGNIFICANCE, KEY_EVENT_TYPE,
+				KEY_OTHERTYPE_DEFINITION, KEY_INFORMATION, KEY_VULNERABILITY_URI});
 
 		IdType identifierType = resource.get(KEY_IDENTIFIER_TYPE);
 		String identifierName = resource.getString(KEY_IDENTIFIER);
@@ -109,11 +110,12 @@ public class Event extends AbstractClient {
 															// discovered-time
 															// to argument
 															// parser
-				resource.getString(KEY_CHARACTERISTIC_DISCOVERER_ID),
+				resource.getString(KEY_DISCOVERER_ID),
 				resource.getInt(KEY_MAGNITUDE),
-				resource.getInt(KEY_CONFIDENCE), eventSignificance,
-				ifmapjEventTypeFrom(eventType),
-				resource.getString(KEY_EVENT_OTHERTYPE_DEFINITION),
+				resource.getInt(KEY_CONFIDENCE), 
+				IfmapjEnumConverter.ifmapjSignificanceFrom(eventSignificance),
+				IfmapjEnumConverter.ifmapjEventTypeFrom(eventType),
+				resource.getString(KEY_OTHERTYPE_DEFINITION),
 				resource.getString(KEY_INFORMATION),
 				resource.getString(KEY_VULNERABILITY_URI));
 
@@ -153,29 +155,4 @@ public class Event extends AbstractClient {
 		}
 
 	}
-
-	private static de.hshannover.f4.trust.ifmapj.metadata.EventType ifmapjEventTypeFrom(
-			EventType type) {
-		switch (type) {
-		case p2p:
-			return de.hshannover.f4.trust.ifmapj.metadata.EventType.p2p;
-		case cve:
-			return de.hshannover.f4.trust.ifmapj.metadata.EventType.cve;
-		case botnet_infection:
-			return de.hshannover.f4.trust.ifmapj.metadata.EventType.botnetInfection;
-		case worm_infection:
-			return de.hshannover.f4.trust.ifmapj.metadata.EventType.wormInfection;
-		case excessive_flows:
-			return de.hshannover.f4.trust.ifmapj.metadata.EventType.excessiveFlows;
-		case behavioral_change:
-			return de.hshannover.f4.trust.ifmapj.metadata.EventType.behavioralChange;
-		case policy_violation:
-			return de.hshannover.f4.trust.ifmapj.metadata.EventType.policyViolation;
-		case other:
-			return de.hshannover.f4.trust.ifmapj.metadata.EventType.other;
-		default:
-			throw new RuntimeException("unknown event type '" + type + "'");
-		}
-	}
-
 }

@@ -18,7 +18,7 @@
  * Email: trust@f4-i.fh-hannover.de
  * Website: http://trust.f4.hs-hannover.de
  * 
- * This file is part of ifmapcli (role), version 0.0.6, implemented by the Trust@HsH
+ * This file is part of ifmapcli (common), version 0.0.6, implemented by the Trust@HsH
  * research group at the Hochschule Hannover.
  * %%
  * Copyright (C) 2010 - 2013 Trust@HsH
@@ -94,9 +94,16 @@ public abstract class AbstractClient {
 	public static final String KEY_OS = "os";
 	public static final String KEY_OS_VERSION = "os-version";
 	public static final String KEY_DEVICE_TYPE = "device-type";
-	public static final String KEY_CHARACTERISTIC_DISCOVERED_TIME = "discovered-time";
-	public static final String KEY_CHARACTERISTIC_DISCOVERER_ID = "discoverer-id";
-	public static final String KEY_CHARACTERISTIC_DISCOVERY_METHOD = "discovery-method";
+	public static final String KEY_DISCOVERY_METHOD = "discovery-method";
+	
+	// device-characteristic, event, location, enf-report, unexpected-behavior
+	public static final String KEY_DISCOVERED_TIME = "discovered-time";
+	public static final String KEY_DISCOVERER_ID = "discoverer-id";
+	public static final String KEY_OTHERTYPE_DEFINITION = "other-type-definition";
+	public static final String KEY_MAGNITUDE = "magnitude";
+	public static final String KEY_CONFIDENCE = "confidence";
+	public static final String KEY_SIGNIFICANCE = "significance";
+	public static final String KEY_INFORMATION = "information";
 	
 	// search and subscribe
 	public static final String KEY_MATCH_LINKS = "matchLinks";
@@ -122,15 +129,7 @@ public abstract class AbstractClient {
 	
 	// event
 	public static final String KEY_EVENT_NAME = "event-name";
-	// TODO add discovered-time
-	// public static final String KEY_EVENT_DISCOVERED_TIME = "discovered-time";
-	public static final String KEY_EVENT_DISCOVERER_ID = "discoverer-id";
-	public static final String KEY_MAGNITUDE = "magnitude";
-	public static final String KEY_CONFIDENCE = "confidence";
-	public static final String KEY_SIGNIFICANCE = "significance";
 	public static final String KEY_EVENT_TYPE = "type";
-	public static final String KEY_EVENT_OTHERTYPE_DEFINITION = "other-type-definition";
-	public static final String KEY_INFORMATION = "information";
 	public static final String KEY_VULNERABILITY_URI = "vulnerability-uri";
 
 	// feature
@@ -150,7 +149,25 @@ public abstract class AbstractClient {
 	public static final String KEY_CTX_POSITION = "ctxp-position";
 	public static final String KEY_CTX_OTHER_DEVICES = "ctxp-other-devices";
 
+	// ip-mac
 	public static final String KEY_DHCP_SERVER = "dhcp-server";
+
+	// location
+	public static final String KEY_LOCATION_INFORMATION_TYPE = "location-information-type";
+	public static final String KEY_LOCATION_INFORMATION_VALUE = "location-information-value";
+	
+	// enforcement-report
+	public static final String KEY_ENFORCEMENT_ACTION = "enforcement-action";
+	public static final String KEY_ENFORCEMENT_REASON = "enforcement-reason";
+
+	// unexpected-behavior
+	public static final String KEY_UNEXP_BEHAVIOR_TYPE = "unexp-behavior-type";
+	
+	// wlan-information
+	public static final String KEY_WLAN_INFORMATION_SSID = "wlan-info-ssid";
+	public static final String KEY_WLAN_INFORMATION_UNICAST_SECURITY = "wlan-info-unicast-security";
+	public static final String KEY_WLAN_INFORMATION_GROUP_SECURITY = "wlan-info-group-security";
+	public static final String KEY_WLAN_INFORMATION_MANAGEMENT_SECURITY = "wlan-info-management-security";
 	
 	protected static String command;
 	
@@ -237,6 +254,10 @@ public abstract class AbstractClient {
 	
 	protected static boolean isDelete(String key) {
 		return resource.getString(key).equals("delete");
+	}
+	
+	protected static Identifier getIdentifier() {
+		return getIdentifier((IdType) resource.get(KEY_IDENTIFIER_TYPE), resource.getString(KEY_IDENTIFIER));
 	}
 	
 	protected static Identifier getIdentifier(IdType type, String name) {

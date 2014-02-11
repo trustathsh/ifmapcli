@@ -60,14 +60,18 @@
 		<module>dev-char</module>
 		<module>dev-ip</module>
 		<module>disc-by</module>
+		<module>enf-report</module>
 		<module>ip-mac</module>
 		<module>layer2-info</module>
+		<module>location</module>
 		<module>role</module>
 		<module>purge</module>
 		<module>pdp</module>
 		<module>req-inv</module>
 		<module>search</module>
 		<module>subscribe</module>
+		<module>unexp-behavior</module>
+		<module>wlan-info</module>
 		<module>event</module>
 		<module>perf1</module>
 		<module>feature</module>

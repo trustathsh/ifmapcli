@@ -1,3 +1,41 @@
+/*
+ * #%L
+ * =====================================================
+ *   _____                _     ____  _   _       _   _
+ *  |_   _|_ __ _   _ ___| |_  / __ \| | | | ___ | | | |
+ *    | | | '__| | | / __| __|/ / _` | |_| |/ __|| |_| |
+ *    | | | |  | |_| \__ \ |_| | (_| |  _  |\__ \|  _  |
+ *    |_| |_|   \__,_|___/\__|\ \__,_|_| |_||___/|_| |_|
+ *                             \____/
+ * 
+ * =====================================================
+ * 
+ * Hochschule Hannover
+ * (University of Applied Sciences and Arts, Hannover)
+ * Faculty IV, Dept. of Computer Science
+ * Ricklinger Stadtweg 118, 30459 Hannover, Germany
+ * 
+ * Email: trust@f4-i.fh-hannover.de
+ * Website: http://trust.f4.hs-hannover.de
+ * 
+ * This file is part of ifmapcli (common), version 0.0.6, implemented by the Trust@HsH
+ * research group at the Hochschule Hannover.
+ * %%
+ * Copyright (C) 2010 - 2013 Trust@HsH
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
 package de.hshannover.f4.trust.ifmapcli.common;
 
 import java.util.Date;
@@ -5,10 +43,12 @@ import java.util.Date;
 import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.ArgumentGroup;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
+import de.hshannover.f4.trust.ifmapcli.common.enums.EnforcementAction;
 import de.hshannover.f4.trust.ifmapcli.common.enums.EventType;
 import de.hshannover.f4.trust.ifmapcli.common.enums.FeatureType;
 import de.hshannover.f4.trust.ifmapcli.common.enums.IdType;
-import de.hshannover.f4.trust.ifmapj.metadata.Significance;
+import de.hshannover.f4.trust.ifmapcli.common.enums.Significance;
+import de.hshannover.f4.trust.ifmapcli.common.enums.WlanSecurityEnum;
 
 public class ParserUtil {
 
@@ -19,7 +59,7 @@ public class ParserUtil {
 	public static final String KEYSTORE_PASS = "keystore-pass";
 
 	public static final String VERBOSE = "verbose";
-
+	
 	public static void addConnectionArgumentsTo(ArgumentParser parser) {
 		// get environment variables
 		String url = System.getenv("IFMAP_URL");
@@ -280,7 +320,7 @@ public class ParserUtil {
 	public static void addDiscoveredTime(ArgumentParser parser) {
 		// characteristics (min=1, max=1)
 		parser.addArgument("discovered-time").type(String.class)
-				.dest(AbstractClient.KEY_CHARACTERISTIC_DISCOVERED_TIME)
+				.dest(AbstractClient.KEY_DISCOVERED_TIME)
 				.setDefault(Common.getTimeAsXsdDateTime(new Date()))
 				.help("time of discovery");
 	}
@@ -288,7 +328,8 @@ public class ParserUtil {
 	public static void addDiscovererId(ArgumentParser parser) {
 		// characteristics (min=1, max=1)
 		parser.addArgument("discoverer-id").type(String.class)
-				.dest(AbstractClient.KEY_CHARACTERISTIC_DISCOVERER_ID)
+				.dest(AbstractClient.KEY_DISCOVERER_ID)
+				.setDefault("ifmapj")
 				.help("ID of discoverer");
 	}
 
@@ -296,7 +337,7 @@ public class ParserUtil {
 		// characteristics (min=1, max=unbounded)
 		// TODO allow more than one argument
 		parser.addArgument("discovery-method").type(String.class)
-				.dest(AbstractClient.KEY_CHARACTERISTIC_DISCOVERY_METHOD)
+				.dest(AbstractClient.KEY_DISCOVERY_METHOD)
 				.help("method of discovery");
 	}
 
@@ -306,34 +347,28 @@ public class ParserUtil {
 				.help("the name of the event");
 	}
 
-	public static void addEventDiscovererId(ArgumentParser parser) {
-		parser.addArgument("--discoverer-id").type(String.class)
-				.dest(AbstractClient.KEY_EVENT_DISCOVERER_ID)
-				.setDefault("ifmapj").help("the discoverer-id of the event");
-	}
-
-	public static void addEventMagnitude(ArgumentParser parser) {
+	public static void addMagnitude(ArgumentParser parser) {
 		parser.addArgument("--magnitude").type(Integer.class)
 				.dest(AbstractClient.KEY_MAGNITUDE).setDefault(0)
 				.choices(Arguments.range(0, 100))
-				.help("the magnitude of the event");
+				.help("the magnitude");
 	}
 
-	public static void addEventConfidence(ArgumentParser parser) {
+	public static void addConfidence(ArgumentParser parser) {
 		parser.addArgument("--confidence").type(Integer.class)
 				.dest(AbstractClient.KEY_CONFIDENCE).setDefault(0)
 				.choices(Arguments.range(0, 100))
-				.help("the confidence for the event");
+				.help("the confidence");
 	}
 
-	public static void addEventSignificance(ArgumentParser parser) {
+	public static void addSignificance(ArgumentParser parser) {
 		parser.addArgument("--significance")
 				.type(Significance.class)
 				.setDefault(Significance.informational)
 				.choices(Significance.critical, Significance.important,
 						Significance.informational)
 				.dest(AbstractClient.KEY_SIGNIFICANCE)
-				.help("the significance of the event");
+				.help("the significance");
 	}
 
 	public static void addEventType(ArgumentParser parser) {
@@ -347,7 +382,7 @@ public class ParserUtil {
 				.setDefault(EventType.other).help("the type of the event");
 	}
 
-	public static void addEventInformation(ArgumentParser parser) {
+	public static void addInformation(ArgumentParser parser) {
 		parser.addArgument("--information").type(String.class)
 				.dest(AbstractClient.KEY_INFORMATION)
 				.help("\"human consumable\" informational string");
@@ -359,10 +394,10 @@ public class ParserUtil {
 				.help("URI of the CVE if type cve is used");
 	}
 
-	public static void addEventOtherTypeDefinition(ArgumentParser parser) {
+	public static void addOtherTypeDefinition(ArgumentParser parser) {
 		parser.addArgument("--other-type-def").type(String.class)
-				.dest(AbstractClient.KEY_EVENT_OTHERTYPE_DEFINITION)
-				.help("other-type-definition of the event");
+				.dest(AbstractClient.KEY_OTHERTYPE_DEFINITION)
+				.help("other-type-definition");
 	}
 
 	public static void addFeatureTargetDevice(ArgumentParser parser) {
@@ -436,6 +471,79 @@ public class ParserUtil {
 	public static void addDhcpServer(ArgumentParser parser) {
 		parser.addArgument("--dhcp-server", "-ds").type(String.class)
 		.dest(AbstractClient.KEY_DHCP_SERVER).setDefault("ip-mac-cli")
-		.help("name of the DHCP server");	
+		.help("name of the DHCP server");
+	}
+
+	public static void addLocationInfoTypes(ArgumentParser parser) {
+		parser.addArgument("--location-info-type", "-lt").type(String.class)
+		.dest(AbstractClient.KEY_LOCATION_INFORMATION_TYPE).nargs("+").required(true)
+		.help("type(s) of the location info");
+	}
+	
+	public static void addLocationInfoValues(ArgumentParser parser) {
+		parser.addArgument("--location-info-value", "-lv").type(String.class)
+		.dest(AbstractClient.KEY_LOCATION_INFORMATION_VALUE).nargs("+").required(true)
+		.help("values of the location info");
+	}
+
+	public static void addEnforcementAction(ArgumentParser parser) {
+		parser.addArgument("enforcement-action").type(EnforcementAction.class)
+		.choices(EnforcementAction.block, EnforcementAction.other, EnforcementAction.quarantine)
+		.dest(AbstractClient.KEY_ENFORCEMENT_ACTION)
+		.help("type of the enforcement action");
+	}
+
+	public static void addEnforcementReason(ArgumentParser parser) {
+		parser.addArgument("--enforcement-reason", "-er").type(String.class)
+		.dest(AbstractClient.KEY_ENFORCEMENT_REASON)
+		.help("reason of the enforcement");
+	}
+	
+	public static void addUnexpBehaviorType(ArgumentParser parser) {
+		parser.addArgument("--unexp-behavior-type", "-ubt").type(String.class)
+		.dest(AbstractClient.KEY_UNEXP_BEHAVIOR_TYPE)
+		.help("type of the unexpected behavior");
+	}
+
+	public static void addWlanInfoSsid(ArgumentParser parser) {
+		parser.addArgument("--wlan-info-ssid", "-ws").type(String.class)
+		.dest(AbstractClient.KEY_WLAN_INFORMATION_SSID)
+		.help("SSID of the WLAN");
+	}
+
+	public static void addWlanInfoGroupSecurity(ArgumentParser parser) {
+		parser.addArgument("wlan-info-group-security").type(WlanSecurityEnum.class)
+		.dest(AbstractClient.KEY_WLAN_INFORMATION_GROUP_SECURITY).required(true)
+		.choices(WlanSecurityEnum.bip,
+				WlanSecurityEnum.ccmp,
+				WlanSecurityEnum.open,
+				WlanSecurityEnum.other,
+				WlanSecurityEnum.tkip,
+				WlanSecurityEnum.wep)
+		.help("type of the WLAN group security");
+	}
+
+	public static void addWlanInfoUnicastSecurity(ArgumentParser parser) {
+		parser.addArgument("--wlan-info-unicast-security", "-wus").type(WlanSecurityEnum.class)
+		.dest(AbstractClient.KEY_WLAN_INFORMATION_UNICAST_SECURITY).nargs("+").required(true)
+		.choices(WlanSecurityEnum.bip,
+				WlanSecurityEnum.ccmp,
+				WlanSecurityEnum.open,
+				WlanSecurityEnum.other,
+				WlanSecurityEnum.tkip,
+				WlanSecurityEnum.wep)
+		.help("type(s) of the WLAN unicast security");
+	}
+
+	public static void addWlanInfoManagementSecurity(ArgumentParser parser) {
+		parser.addArgument("--wlan-info-management-security", "-wms").type(WlanSecurityEnum.class)
+		.dest(AbstractClient.KEY_WLAN_INFORMATION_MANAGEMENT_SECURITY).nargs("+").required(true)
+		.choices(WlanSecurityEnum.bip,
+				WlanSecurityEnum.ccmp,
+				WlanSecurityEnum.open,
+				WlanSecurityEnum.other,
+				WlanSecurityEnum.tkip,
+				WlanSecurityEnum.wep)
+		.help("type(s) of the WLAN management security");
 	}
 }

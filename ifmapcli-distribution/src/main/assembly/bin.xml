@@ -26,14 +26,18 @@
 				<include>de.hshannover.f4.trust.ifmapcli:dev-char</include>
 				<include>de.hshannover.f4.trust.ifmapcli:dev-ip</include>
 				<include>de.hshannover.f4.trust.ifmapcli:disc-by</include>
+				<include>de.hshannover.f4.trust.ifmapcli:enf-report</include>
 				<include>de.hshannover.f4.trust.ifmapcli:ip-mac</include>
 				<include>de.hshannover.f4.trust.ifmapcli:layer2-info</include>
+				<include>de.hshannover.f4.trust.ifmapcli:location</include>
 				<include>de.hshannover.f4.trust.ifmapcli:req-inv</include>
 				<include>de.hshannover.f4.trust.ifmapcli:pdp</include>
 				<include>de.hshannover.f4.trust.ifmapcli:purge</include>
 				<include>de.hshannover.f4.trust.ifmapcli:role</include>
 				<include>de.hshannover.f4.trust.ifmapcli:search</include>
 				<include>de.hshannover.f4.trust.ifmapcli:subscribe</include>
+				<include>de.hshannover.f4.trust.ifmapcli:unexp-behavior</include>
+				<include>de.hshannover.f4.trust.ifmapcli:wlan-info</include>
 				<include>de.hshannover.f4.trust.ifmapcli:event</include>
 				<include>de.hshannover.f4.trust.ifmapcli:perf1</include>
 				<include>de.hshannover.f4.trust.ifmapcli:feature</include>
