@@ -154,6 +154,7 @@
 					<licenseName>apache_v2</licenseName>
                     <addJavaLicenseAfterPackage>false</addJavaLicenseAfterPackage>
 					<canUpdateDescription>true</canUpdateDescription>
+					<canUpdateCopyright>true</canUpdateCopyright>
 					<descriptionTemplate>${basedir}/src/license/description_template.ftl</descriptionTemplate>
 					<roots>
 						<root>src/main/java</root>
