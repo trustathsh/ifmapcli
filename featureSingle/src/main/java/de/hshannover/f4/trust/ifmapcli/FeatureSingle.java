@@ -97,7 +97,6 @@ public class FeatureSingle extends AbstractClient {
 	private static String mCtxTime;
 	private static String mCtxPos;
 	private static String mCtxOtherDevices;
-	private static boolean mDeleteSubCatMetadata;
 
 	private static List<PublishElement> mPublishElements = new ArrayList<PublishElement>();
 
@@ -115,7 +114,7 @@ public class FeatureSingle extends AbstractClient {
 		if (mIsUpdate) {
 			publishUpdateOrDelete = Requests.createPublishUpdate(dev, rootCategory, deviceCategory, MetadataLifetime.forever);
 			mPublishElements.add(publishUpdateOrDelete);
-		} else if (mDeleteSubCatMetadata) {
+		} else {
 			publishUpdateOrDelete = Requests.createPublishDelete(dev, rootCategory);
 			mPublishElements.add(publishUpdateOrDelete);
 		}
@@ -181,7 +180,7 @@ public class FeatureSingle extends AbstractClient {
 			if(mIsUpdate) {
 				pEl = Requests.createPublishUpdate(parent,  node, subCategoryOf, MetadataLifetime.forever);
 				mPublishElements.add(pEl);
-			}  else if (mDeleteSubCatMetadata) {
+			}  else {
 				pEl = Requests.createPublishDelete(parent, node);
 				mPublishElements.add(pEl);
 			}
@@ -263,8 +262,6 @@ public class FeatureSingle extends AbstractClient {
 		mCtxPos = resource.getString(KEY_CTX_POSITION);
 		mCtxOtherDevices = resource.getString(KEY_CTX_OTHER_DEVICES);
 
-		mDeleteSubCatMetadata = resource.getBoolean(KEY_PURGE);
-		
 		mDocumentBuilderFactory = DocumentBuilderFactory.newInstance();
 
 		try {
