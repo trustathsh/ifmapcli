@@ -84,6 +84,12 @@ public abstract class AbstractClient {
 	public static final String KEY_ROLE = "role";
 	public static final String KEY_QUALIFIER = "qualifier";
 	public static final String KEY_CAP_NAME = "capability";
+	public static final String KEY_ELEMENT_NAME = "element-name";
+	public static final String KEY_CARDINALITY = "cardinality";
+	public static final String KEY_ATTRIBUTE_NAME = "attribute-name";
+	public static final String KEY_ATTRIBUTE_VALUE = "attribute-value";
+	public static final String KEY_SEC_IDENTIFIER_TYPE = "second-identifier-type";
+	public static final String KEY_SEC_IDENTIFIER = "second-identifier";
 
 	// device-attribute
 	public static final String KEY_ATTR = "device-attribute";

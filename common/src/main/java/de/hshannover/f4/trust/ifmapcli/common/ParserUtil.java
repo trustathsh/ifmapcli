@@ -172,7 +172,43 @@ public class ParserUtil {
 		parser.addArgument("identifier").type(String.class)
 				.dest(AbstractClient.KEY_IDENTIFIER).help("the identifier");
 	}
-
+	
+	public static void addElementName(ArgumentParser parser) {
+		parser.addArgument("element-name").type(String.class)
+				.dest(AbstractClient.KEY_ELEMENT_NAME).help("the name of extended metadata");
+	}
+	
+	public static void addCardinality(ArgumentParser parser) {
+		parser.addArgument("--cardinality").type(String.class)
+				.dest(AbstractClient.KEY_CARDINALITY).choices("singleValue","multiValue").setDefault("singleValue")
+				.help("the cardinality of extended metadata");
+	}
+	
+	public static void addAttributeName(ArgumentParser parser) {
+		parser.addArgument("--attribute-name").type(String.class)
+				.dest(AbstractClient.KEY_ATTRIBUTE_NAME).setDefault("")
+				.help("the name of the attribute of a extended metadata");
+	}
+	
+	public static void addAttributeValue(ArgumentParser parser) {
+		parser.addArgument("--attribute-value").type(String.class)
+				.dest(AbstractClient.KEY_ATTRIBUTE_VALUE).setDefault("")
+				.help("the value of the attribute of a extended metadata");
+	}
+	
+	public static void addSecIdentifierType(ArgumentParser parser, IdType... types) {
+		parser.addArgument("--sec-identifier-type").type(IdType.class)
+				.dest(AbstractClient.KEY_SEC_IDENTIFIER_TYPE).choices(types)
+				.help("the type of the other identifier of a extended metadata");
+	}
+	
+	public static void addSecIdentifier(ArgumentParser parser) {
+		parser.addArgument("--sec-identifier").type(String.class)
+				.dest(AbstractClient.KEY_SEC_IDENTIFIER)
+				.help("the type of the other identifier of a extended metadata");
+	}
+	
+	
 	public static void addOtherIdentifierType(ArgumentParser parser,
 			IdType... types) {
 		parser.addArgument("other-identifier-type").type(IdType.class)
