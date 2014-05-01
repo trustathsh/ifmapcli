@@ -67,7 +67,10 @@ import de.hshannover.f4.trust.ifmapj.metadata.StandardIfmapMetadataFactory;
 public abstract class AbstractClient {
 
 	public static final String KEY_OPERATION = "publishOperation";
-
+	
+	// File and System IO
+	public static final String KEY_FILE_IN_SYSTEM_IN = "file-in-system-in";
+	
 	// Identifier
 	public static final String KEY_ACCESS_REQUEST = "accessRequest";
 	public static final String KEY_DEVICE = "device";
@@ -78,7 +81,8 @@ public abstract class AbstractClient {
 	public static final String KEY_IDENTIFIER_TYPE = "identifierType";
 	public static final String KEY_OTHER_IDENTIFIER_TYPE = "other-identifier-type";
 	public static final String KEY_OTHER_IDENTIFIER = "other-identifier";
-
+	public static final String KEY_EX_IDENTIFIER = "extended-identifier";
+	
 	// Metadata
 	public static final String KEY_ADMINISTRATIVE_DOMAIN = "administrative-domain";
 	public static final String KEY_ROLE = "role";

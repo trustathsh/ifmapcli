@@ -173,9 +173,19 @@ public class ParserUtil {
 				.dest(AbstractClient.KEY_IDENTIFIER).help("the identifier");
 	}
 	
+	public static void addExIdentifier(ArgumentParser parser) {
+		parser.addArgument("extended-identifier").type(Arguments.fileType().verifyCanRead())
+				.dest(AbstractClient.KEY_EX_IDENTIFIER).help("the path to the xml file");
+	}
+	
 	public static void addElementName(ArgumentParser parser) {
-		parser.addArgument("element-name").type(String.class)
+		parser.addArgument("--element-name").type(String.class).setDefault("")
 				.dest(AbstractClient.KEY_ELEMENT_NAME).help("the name of extended metadata");
+	}
+	
+	public static void addFileInSystemIn(ArgumentParser parser) {
+		parser.addArgument("--in").type(Arguments.fileType().acceptSystemIn().verifyCanRead())
+				.dest(AbstractClient.KEY_FILE_IN_SYSTEM_IN).help("filename or - for system in");
 	}
 	
 	public static void addCardinality(ArgumentParser parser) {
@@ -199,13 +209,13 @@ public class ParserUtil {
 	public static void addSecIdentifierType(ArgumentParser parser, IdType... types) {
 		parser.addArgument("--sec-identifier-type").type(IdType.class)
 				.dest(AbstractClient.KEY_SEC_IDENTIFIER_TYPE).choices(types)
-				.help("the type of the other identifier of a extended metadata");
+				.help("the type of the second identifier");
 	}
 	
 	public static void addSecIdentifier(ArgumentParser parser) {
 		parser.addArgument("--sec-identifier").type(String.class)
 				.dest(AbstractClient.KEY_SEC_IDENTIFIER)
-				.help("the type of the other identifier of a extended metadata");
+				.help("the second identifier name or filename for extended identifier");
 	}
 	
 	

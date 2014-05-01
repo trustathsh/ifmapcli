@@ -38,13 +38,24 @@
  */
 package de.hshannover.f4.trust.ifmapcli;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
 import net.sourceforge.argparse4j.inf.ArgumentParser;
 
 import org.w3c.dom.Document;
 
+import util.DomHelpers;
 import de.hshannover.f4.trust.ifmapcli.common.AbstractClient;
 import de.hshannover.f4.trust.ifmapcli.common.ParserUtil;
+import de.hshannover.f4.trust.ifmapcli.common.enums.IdType;
 import de.hshannover.f4.trust.ifmapj.binding.IfmapStrings;
+import de.hshannover.f4.trust.ifmapj.channel.SSRC;
+import de.hshannover.f4.trust.ifmapj.exception.MarshalException;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifier;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifiers;
 import de.hshannover.f4.trust.ifmapj.messages.MetadataLifetime;
@@ -63,46 +74,191 @@ import de.hshannover.f4.trust.ifmapj.messages.Requests;
 public class ExIdent extends AbstractClient {
 
 	/**
+	 * 
+	 * Method to initialize the parser operations
+	 *
+	 * @param args
+	 *            the arguments submitted to the cli module
+	 * 
+	 */
+	private static void initParser(String[] args) {
+
+		command = "ex-id";
+
+		// ---parsing-------
+		ArgumentParser parser = createDefaultParser();
+
+		ParserUtil.addPublishOperation(parser);
+
+		ParserUtil.addExIdentifier(parser);
+
+		ParserUtil.addSecIdentifierType(parser, IdType.ipv4, IdType.ipv6, IdType.mac, IdType.dev, IdType.ar, IdType.id,
+				IdType.exid);
+		ParserUtil.addSecIdentifier(parser);
+
+		ParserUtil.addFileInSystemIn(parser);
+
+		parseParameters(parser, args);
+	}
+
+	/**
 	 * Method to start this module
 	 *
 	 */
 
 	public static void main(String[] args) {
-		command = "ar-dev";
 
-		ArgumentParser parser = createDefaultParser();
-		ParserUtil.addPublishOperation(parser);
-		ParserUtil.addAccessRequest(parser);
-		ParserUtil.addDevice(parser);
+		initParser(args);
 
-		parseParameters(parser, args);
-
-		printParameters(KEY_OPERATION, new String[] {KEY_ACCESS_REQUEST, KEY_DEVICE});
-
-		String ar = resource.getString(KEY_ACCESS_REQUEST);
-		String dev = resource.getString(KEY_DEVICE);
+		printParameters(KEY_OPERATION, new String[] { KEY_ACCESS_REQUEST, KEY_DEVICE });
 
 		// prepare identifiers
-		Identifier arIdentifier = Identifiers.createAr(ar);
-		Identifier devIdentifier = Identifiers.createDev(dev);
 
-		// prepare metadata
-		Document metadata = mf.createArDev();
+		File exIdent = resource.get(KEY_EX_IDENTIFIER);
+		Identifier identifier1 = null;
 
-		PublishRequest request;
-		// update or delete
-		if (isUpdate(KEY_OPERATION)) {
-			PublishUpdate publishUpdate = Requests.createPublishUpdate(arIdentifier, devIdentifier, metadata,
-					MetadataLifetime.forever);
-			request = Requests.createPublishReq(publishUpdate);
-		} else {
-			String filter = "meta:access-request-device";
-			PublishDelete publishDelete = Requests.createPublishDelete(arIdentifier, devIdentifier, filter);
-			publishDelete.addNamespaceDeclaration(IfmapStrings.STD_METADATA_PREFIX, IfmapStrings.STD_METADATA_NS_URI);
-			request = Requests.createPublishReq(publishDelete);
+		try {
+			identifier1 = Identifiers.createExtendedIdentity(new FileInputStream(exIdent));
+		} catch (MarshalException e) {
+			e.printStackTrace();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
 		}
 
-		// publish
-		publishIfmapData(request);
+		IdType identifierType2 = resource.get(KEY_SEC_IDENTIFIER_TYPE);
+		String identifierNameOrFileName2 = resource.getString(KEY_SEC_IDENTIFIER);
+		Identifier identifier2 = null;
+
+		if (identifierType2 == null && identifierNameOrFileName2 != null) {
+			throw new RuntimeException("no identifier type specified for given identifier: "
+					+ identifierNameOrFileName2);
+		} else if (identifierType2 != null && identifierNameOrFileName2 == null) {
+			throw new RuntimeException("no identifier specified for given identifier type: " + identifierType2);
+		} else if (identifierType2 != null && identifierNameOrFileName2 != null) {
+			if (identifierType2 == IdType.exid) {
+				try {
+					identifier2 = Identifiers.createExtendedIdentity(new FileInputStream(identifierNameOrFileName2));
+				} catch (MarshalException e) {
+					e.printStackTrace();
+				} catch (FileNotFoundException e) {
+					e.printStackTrace();
+				}
+			} else {
+				identifier2 = getIdentifier(identifierType2, identifierNameOrFileName2);
+			}
+		}
+
+		// prepare metadata
+
+		File metadataXmlFile = resource.get(KEY_FILE_IN_SYSTEM_IN);
+		Document metadata = readFileInSystemIn(metadataXmlFile);
+
+		// Publish/delete the metadata
+		publishDeleteMetaData(identifier1, identifier2, metadata);
 	}
+
+	/**
+	 * 
+	 * Helper method to read inputstream of file or system in
+	 *
+	 * @param metadata
+	 *            A XML Document that specifies the metadata
+	 * 
+	 */
+	private static Document readFileInSystemIn(File input) {
+		Document metadata = null;
+
+		if (input.getName().equals("-")) {
+			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+
+			// Workaround
+			String zeile = "";
+			try {
+				zeile = br.readLine();
+				while (br.ready()) {
+					zeile += br.readLine();
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			// ----------
+
+			try {
+				metadata = DomHelpers.toDocument(zeile, null);
+			} catch (MarshalException e) {
+				e.printStackTrace();
+			}
+		} else {
+			try {
+				metadata = DomHelpers.toDocument(new FileInputStream(input));
+			} catch (MarshalException e) {
+				e.printStackTrace();
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			}
+		}
+
+		return metadata;
+	}
+
+	/**
+	 * 
+	 * helper Method to publish/delete the metadata
+	 *
+	 * @param identifier1
+	 *            the identifier1
+	 * @param identifier2
+	 *            the optional identifier2 must be null if not exist
+	 * @param metadata
+	 *            the metadata xml document
+	 * @param nsPrefix
+	 *            Namespace prefix
+	 * @param nsUri
+	 *            Namespace uri
+	 * 
+	 */
+	private static void publishDeleteMetaData(Identifier identifier1, Identifier identifier2, Document metadata) {
+
+		String nsPrefix = metadata.getChildNodes().item(0).getPrefix();
+		String nsUri = metadata.getChildNodes().item(0).getNamespaceURI();
+		String elementname = metadata.getChildNodes().item(0).getLocalName();
+
+		try {
+			SSRC ssrc = createSSRC();
+			ssrc.newSession();
+
+			PublishRequest request;
+
+			if (isUpdate(KEY_OPERATION)) {
+				if (identifier2 == null) {
+					PublishUpdate publishUpdate = Requests.createPublishUpdate(identifier1, metadata,
+							MetadataLifetime.forever);
+					request = Requests.createPublishReq(publishUpdate);
+				} else {
+					PublishUpdate publishUpdate = Requests.createPublishUpdate(identifier1, identifier2, metadata,
+							MetadataLifetime.forever);
+					request = Requests.createPublishReq(publishUpdate);
+				}
+			} else {
+				PublishDelete publishDelete;
+				String filter = String.format(nsPrefix + ":" + elementname + "[@ifmap-publisher-id='%s']",
+						ssrc.getPublisherId());
+				if (identifier2 == null) {
+					publishDelete = Requests.createPublishDelete(identifier1, filter);
+				} else {
+					publishDelete = Requests.createPublishDelete(identifier1, identifier2, filter);
+				}
+				publishDelete.addNamespaceDeclaration(nsPrefix, nsUri);
+				request = Requests.createPublishReq(publishDelete);
+			}
+
+			ssrc.publish(request);
+			ssrc.endSession();
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.exit(1);
+		}
+
+	}
+
 }
