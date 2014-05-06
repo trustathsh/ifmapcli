@@ -42,6 +42,8 @@
 				<include>de.hshannover.f4.trust.ifmapcli:feature</include>
 				<include>de.hshannover.f4.trust.ifmapcli:feature2</include>
 				<include>de.hshannover.f4.trust.ifmapcli:featureSingle</include>
+                <include>de.hshannover.f4.trust.ifmapcli:ex-ident</include>
+                <include>de.hshannover.f4.trust.ifmapcli:ex-meta</include>
 			</includes>
 			<binaries>
 				<outputDirectory>${artifactId}</outputDirectory>

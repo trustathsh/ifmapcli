@@ -83,9 +83,9 @@
 		<module>feature</module>
 		<module>feature2</module>
 		<module>featureSingle</module>
-		<module>ifmapcli-distribution</module>
 		<module>ex-ident</module>
 		<module>ex-meta</module>
+		<module>ifmapcli-distribution</module>
 	</modules>
 
 	<dependencyManagement>
