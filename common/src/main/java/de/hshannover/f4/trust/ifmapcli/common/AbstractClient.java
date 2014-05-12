@@ -69,7 +69,7 @@ public abstract class AbstractClient {
 	public static final String KEY_OPERATION = "publishOperation";
 	
 	// File and System IO
-	public static final String KEY_FILE_IN_SYSTEM_IN = "file-in-system-in";
+	public static final String KEY_META_FILE_IN_SYSTEM_IN = "meta-file-in-system-in";
 	
 	// Identifier
 	public static final String KEY_ACCESS_REQUEST = "accessRequest";

@@ -183,9 +183,9 @@ public class ParserUtil {
 				.dest(AbstractClient.KEY_ELEMENT_NAME).help("the name of extended metadata");
 	}
 	
-	public static void addFileInSystemIn(ArgumentParser parser) {
-		parser.addArgument("--in").type(Arguments.fileType().acceptSystemIn().verifyCanRead())
-				.dest(AbstractClient.KEY_FILE_IN_SYSTEM_IN).help("filename or - for system in");
+	public static void addMetaFileInSystemIn(ArgumentParser parser) {
+		parser.addArgument("--meta-in").type(Arguments.fileType().acceptSystemIn().verifyCanRead())
+				.dest(AbstractClient.KEY_META_FILE_IN_SYSTEM_IN).help("Meta filename or - for system in");
 	}
 	
 	public static void addCardinality(ArgumentParser parser) {

@@ -53,7 +53,6 @@ import util.DomHelpers;
 import de.hshannover.f4.trust.ifmapcli.common.AbstractClient;
 import de.hshannover.f4.trust.ifmapcli.common.ParserUtil;
 import de.hshannover.f4.trust.ifmapcli.common.enums.IdType;
-import de.hshannover.f4.trust.ifmapj.binding.IfmapStrings;
 import de.hshannover.f4.trust.ifmapj.channel.SSRC;
 import de.hshannover.f4.trust.ifmapj.exception.MarshalException;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifier;
@@ -96,7 +95,7 @@ public class ExIdent extends AbstractClient {
 				IdType.exid);
 		ParserUtil.addSecIdentifier(parser);
 
-		ParserUtil.addFileInSystemIn(parser);
+		ParserUtil.addMetaFileInSystemIn(parser);
 
 		parseParameters(parser, args);
 	}
@@ -110,7 +109,8 @@ public class ExIdent extends AbstractClient {
 
 		initParser(args);
 
-		printParameters(KEY_OPERATION, new String[] { KEY_ACCESS_REQUEST, KEY_DEVICE });
+		printParameters(KEY_OPERATION, new String[] { KEY_EX_IDENTIFIER, KEY_SEC_IDENTIFIER_TYPE, KEY_SEC_IDENTIFIER,
+				KEY_META_FILE_IN_SYSTEM_IN });
 
 		// prepare identifiers
 
@@ -150,7 +150,7 @@ public class ExIdent extends AbstractClient {
 
 		// prepare metadata
 
-		File metadataXmlFile = resource.get(KEY_FILE_IN_SYSTEM_IN);
+		File metadataXmlFile = resource.get(KEY_META_FILE_IN_SYSTEM_IN);
 		Document metadata = readFileInSystemIn(metadataXmlFile);
 
 		// Publish/delete the metadata
@@ -161,9 +161,10 @@ public class ExIdent extends AbstractClient {
 	 * 
 	 * Helper method to read inputstream of file or system in
 	 *
-	 * @param metadata
-	 *            A XML Document that specifies the metadata
+	 * @param input
+	 *            A File Object specifying System in or a File
 	 * 
+	 * @return A XML Metadata Document
 	 */
 	private static Document readFileInSystemIn(File input) {
 		Document metadata = null;
@@ -171,12 +172,12 @@ public class ExIdent extends AbstractClient {
 		if (input.getName().equals("-")) {
 			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 
-			// Workaround
-			String zeile = "";
+			// Workaround for multiline system in
+			String line = "";
 			try {
-				zeile = br.readLine();
+				line = br.readLine();
 				while (br.ready()) {
-					zeile += br.readLine();
+					line += br.readLine();
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -184,7 +185,7 @@ public class ExIdent extends AbstractClient {
 			// ----------
 
 			try {
-				metadata = DomHelpers.toDocument(zeile, null);
+				metadata = DomHelpers.toDocument(line, null);
 			} catch (MarshalException e) {
 				e.printStackTrace();
 			}
@@ -211,10 +212,6 @@ public class ExIdent extends AbstractClient {
 	 *            the optional identifier2 must be null if not exist
 	 * @param metadata
 	 *            the metadata xml document
-	 * @param nsPrefix
-	 *            Namespace prefix
-	 * @param nsUri
-	 *            Namespace uri
 	 * 
 	 */
 	private static void publishDeleteMetaData(Identifier identifier1, Identifier identifier2, Document metadata) {

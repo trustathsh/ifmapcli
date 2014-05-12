@@ -103,7 +103,7 @@ public class ExMeta extends AbstractClient {
 		ParserUtil.addAttributeName(parser);
 		ParserUtil.addAttributeValue(parser);
 
-		ParserUtil.addFileInSystemIn(parser);
+		ParserUtil.addMetaFileInSystemIn(parser);
 
 		ParserUtil.addNamespacePrefix(parser);
 		ParserUtil.addNamespaceUri(parser);
@@ -121,7 +121,7 @@ public class ExMeta extends AbstractClient {
 		initParser(args);
 		printParameters(KEY_OPERATION, new String[] { KEY_IDENTIFIER_TYPE, KEY_IDENTIFIER, KEY_SEC_IDENTIFIER_TYPE,
 				KEY_SEC_IDENTIFIER, KEY_ELEMENT_NAME, KEY_CARDINALITY, KEY_ATTRIBUTE_NAME, KEY_ATTRIBUTE_VALUE,
-				KEY_NAMESPACE_PREFIX, KEY_NAMESPACE_URI, KEY_FILE_IN_SYSTEM_IN });
+				KEY_NAMESPACE_PREFIX, KEY_NAMESPACE_URI, KEY_META_FILE_IN_SYSTEM_IN });
 
 		// ---get parameters and set Defaults if necessary-------
 
@@ -130,8 +130,7 @@ public class ExMeta extends AbstractClient {
 		String attrName = resource.getString(KEY_ATTRIBUTE_NAME);
 		String attrValue = resource.getString(KEY_ATTRIBUTE_VALUE);
 		String elementName = resource.getString(KEY_ELEMENT_NAME);
-		
-		
+
 		if (nsPrefix == null) {
 			nsPrefix = IfmapStrings.STD_METADATA_PREFIX;
 		}
@@ -155,14 +154,15 @@ public class ExMeta extends AbstractClient {
 			identifier2 = getIdentifier(identifierType2, identifierName);
 		}
 
-		// look for inputfile or stream for metadata if not look for given elementname
+		// look for inputfile or stream for metadata if not look for given
+		// elementname
 
 		Document metadata = null;
-		File input = resource.get(KEY_FILE_IN_SYSTEM_IN);
+		File input = resource.get(KEY_META_FILE_IN_SYSTEM_IN);
 		if (input != null) {
 			metadata = readFileInSystemIn(input);
-		} else{
-			if(elementName.equals("")){
+		} else {
+			if (elementName.equals("")) {
 				throw new RuntimeException("no element name or no xmlfile specified for metadata");
 			}
 		}
@@ -171,18 +171,15 @@ public class ExMeta extends AbstractClient {
 		if (metadata == null) {
 			if (resource.getString(KEY_CARDINALITY).equals("singleValue")) {
 				if (attrName.equals("") || attrValue.equals("")) {
-					metadata = mf
-							.create(elementName, nsPrefix, nsUri, Cardinality.singleValue);
+					metadata = mf.create(elementName, nsPrefix, nsUri, Cardinality.singleValue);
 				} else {
-					metadata = mf.create(elementName, nsPrefix, nsUri,
-							Cardinality.singleValue, attrName, attrValue);
+					metadata = mf.create(elementName, nsPrefix, nsUri, Cardinality.singleValue, attrName, attrValue);
 				}
 			} else {
 				if (attrName.equals("") || attrValue.equals("")) {
 					metadata = mf.create(elementName, nsPrefix, nsUri, Cardinality.multiValue);
 				} else {
-					metadata = mf.create(elementName, nsPrefix, nsUri, Cardinality.multiValue,
-							attrName, attrValue);
+					metadata = mf.create(elementName, nsPrefix, nsUri, Cardinality.multiValue, attrName, attrValue);
 				}
 			}
 		}
@@ -194,9 +191,10 @@ public class ExMeta extends AbstractClient {
 	 * 
 	 * Helper method to read inputstream of file or system in
 	 *
-	 * @param metadata
-	 *            A XML Document that specifies the metadata
+	 * @param input
+	 *            A File Object specifying System in or a File
 	 * 
+	 * @return A XML Metadata Document
 	 */
 	private static Document readFileInSystemIn(File input) {
 		Document metadata = null;
@@ -204,12 +202,12 @@ public class ExMeta extends AbstractClient {
 		if (input.getName().equals("-")) {
 			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 
-			// Workaround
-			String zeile = "";
+			// Workaround for multiline system in
+			String line = "";
 			try {
-				zeile = br.readLine();
+				line = br.readLine();
 				while (br.ready()) {
-					zeile += br.readLine();
+					line += br.readLine();
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -217,7 +215,7 @@ public class ExMeta extends AbstractClient {
 			// ----------
 
 			try {
-				metadata = DomHelpers.toDocument(zeile, null);
+				metadata = DomHelpers.toDocument(line, null);
 			} catch (MarshalException e) {
 				e.printStackTrace();
 			}
@@ -244,10 +242,6 @@ public class ExMeta extends AbstractClient {
 	 *            the optional identifier2 must be null if not exist
 	 * @param metadata
 	 *            the metadata xml document
-	 * @param nsPrefix
-	 *            Namespace prefix
-	 * @param nsUri
-	 *            Namespace uri
 	 * 
 	 */
 	private static void publishDeleteMetaData(Identifier identifier1, Identifier identifier2, Document metadata) {
