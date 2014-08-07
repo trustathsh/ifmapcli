@@ -58,6 +58,7 @@ import de.hshannover.f4.trust.ifmapj.binding.IfmapStrings;
 import de.hshannover.f4.trust.ifmapj.channel.SSRC;
 import de.hshannover.f4.trust.ifmapj.exception.MarshalException;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifier;
+import de.hshannover.f4.trust.ifmapj.identifier.Identifiers;
 import de.hshannover.f4.trust.ifmapj.messages.MetadataLifetime;
 import de.hshannover.f4.trust.ifmapj.messages.PublishDelete;
 import de.hshannover.f4.trust.ifmapj.messages.PublishRequest;
@@ -91,11 +92,18 @@ public class ExMeta extends AbstractClient {
 		ArgumentParser parser = createDefaultParser();
 
 		ParserUtil.addPublishOperation(parser);
+		ParserUtil.addIdentifierType(parser, IdType.ipv4, IdType.ipv6,
+				IdType.mac, IdType.dev, IdType.ar, IdType.id, IdType.id_aik,
+				IdType.id_dist, IdType.id_dns, IdType.id_email,
+				IdType.id_hiphit, IdType.id_kerberos, IdType.id_sip,
+				IdType.id_tel, IdType.id_user, IdType.exid);
+		ParserUtil.addIdentifierOrEx(parser);
 
-		ParserUtil.addIdentifierType(parser, IdType.ipv4, IdType.ipv6, IdType.mac, IdType.dev, IdType.ar, IdType.id);
-		ParserUtil.addIdentifier(parser);
-
-		ParserUtil.addSecIdentifierType(parser, IdType.ipv4, IdType.ipv6, IdType.mac, IdType.dev, IdType.ar, IdType.id);
+		ParserUtil.addSecIdentifierType(parser, IdType.ipv4, IdType.ipv6,
+				IdType.mac, IdType.dev, IdType.ar, IdType.id, IdType.id_aik,
+				IdType.id_dist, IdType.id_dns, IdType.id_email,
+				IdType.id_hiphit, IdType.id_kerberos, IdType.id_sip,
+				IdType.id_tel, IdType.id_user, IdType.exid);
 		ParserUtil.addSecIdentifier(parser);
 
 		ParserUtil.addElementName(parser);
@@ -140,18 +148,45 @@ public class ExMeta extends AbstractClient {
 
 		// prepare the identifier
 		IdType identifierType1 = resource.get(KEY_IDENTIFIER_TYPE);
-		Identifier identifier1 = getIdentifier(identifierType1, resource.getString(KEY_IDENTIFIER));
+		String identifierName1 = resource.getString(KEY_IDENTIFIER);
+		Identifier identifier1 = null;
+		if (identifierType1 == IdType.exid) {
+			try {
+				identifier1 = Identifiers
+						.createExtendedIdentity(new FileInputStream(
+								identifierName1));
+			} catch (MarshalException e) {
+				e.printStackTrace();
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			}
+		} else {
+			identifier1 = getIdentifier(identifierType1, identifierName1);
+		}
 
 		IdType identifierType2 = resource.get(KEY_SEC_IDENTIFIER_TYPE);
-		String identifierName = resource.getString(KEY_SEC_IDENTIFIER);
+		String identifierName2 = resource.getString(KEY_SEC_IDENTIFIER);
 		Identifier identifier2 = null;
 
-		if (identifierType2 == null && identifierName != null) {
-			throw new RuntimeException("no identifier type specified for given identifier: " + identifierName);
-		} else if (identifierType2 != null && identifierName == null) {
+		if (identifierType2 == null && identifierName2 != null) {
+			throw new RuntimeException("no identifier type specified for given identifier: " + identifierName2);
+		} else if (identifierType2 != null && identifierName2 == null) {
 			throw new RuntimeException("no identifier specified for given identifier type: " + identifierType2);
-		} else if (identifierType2 != null && identifierName != null) {
-			identifier2 = getIdentifier(identifierType2, identifierName);
+		} else if (identifierType2 != null && identifierName2 != null) {
+			if (identifierType2 == IdType.exid) {
+				try {
+					identifier2 = Identifiers
+							.createExtendedIdentity(new FileInputStream(
+									identifierName2));
+				} catch (MarshalException e) {
+					e.printStackTrace();
+				} catch (FileNotFoundException e) {
+					e.printStackTrace();
+				}
+			} else {
+				identifier2 = getIdentifier(identifierType2,
+						identifierName2);
+			}
 		}
 
 		// look for inputfile or stream for metadata if not look for given

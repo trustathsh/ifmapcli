@@ -39,5 +39,5 @@
 package de.hshannover.f4.trust.ifmapcli.common.enums;
 
 public enum IdType {
-	ipv4, ipv6, mac, dev, ar, id, exid
+	ipv4, ipv6, mac, dev, ar, id, id_aik, id_dist, id_dns, id_email, id_hiphit, id_kerberos, id_user, id_sip, id_tel, exid
 }

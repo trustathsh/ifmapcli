@@ -173,6 +173,12 @@ public class ParserUtil {
 				.dest(AbstractClient.KEY_IDENTIFIER).help("the identifier");
 	}
 	
+	public static void addIdentifierOrEx(ArgumentParser parser) {
+		parser.addArgument("identifier").type(String.class)
+				.dest(AbstractClient.KEY_IDENTIFIER)
+				.help("the identifier or filename for extended identifier");
+	}
+	
 	public static void addExIdentifier(ArgumentParser parser) {
 		parser.addArgument("extended-identifier").type(Arguments.fileType().verifyCanRead())
 				.dest(AbstractClient.KEY_EX_IDENTIFIER).help("the path to the xml file");
@@ -217,7 +223,6 @@ public class ParserUtil {
 				.dest(AbstractClient.KEY_SEC_IDENTIFIER)
 				.help("the second identifier name or filename for extended identifier");
 	}
-	
 	
 	public static void addOtherIdentifierType(ArgumentParser parser,
 			IdType... types) {

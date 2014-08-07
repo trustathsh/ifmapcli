@@ -278,15 +278,32 @@ public abstract class AbstractClient {
 			return Identifiers.createIp4(name);
 		case ipv6:
 			return Identifiers.createIp6(name);
-		case id:
-			// TODO add optinal parameter for the identity identifier type
-			return Identifiers.createIdentity(IdentityType.other, name);
 		case mac:
 			return Identifiers.createMac(name);
 		case dev:
 			return Identifiers.createDev(name);
 		case ar:
 			return Identifiers.createAr(name);
+		case id:
+			return Identifiers.createIdentity(IdentityType.other, name);
+		case id_aik:
+			return Identifiers.createIdentity(IdentityType.aikName, name);
+		case id_dist:
+			return Identifiers.createIdentity(IdentityType.distinguishedName, name);
+		case id_dns:
+			return Identifiers.createIdentity(IdentityType.dnsName, name);
+		case id_email:
+			return Identifiers.createIdentity(IdentityType.emailAddress, name);
+		case id_hiphit:
+			return Identifiers.createIdentity(IdentityType.hipHit, name);
+		case id_kerberos:
+			return Identifiers.createIdentity(IdentityType.kerberosPrincipal, name);
+		case id_sip:
+			return Identifiers.createIdentity(IdentityType.sipUri, name);
+		case id_tel:
+			return Identifiers.createIdentity(IdentityType.telUri, name);
+		case id_user:
+			return Identifiers.createIdentity(IdentityType.userName, name);
 		default:
 			throw new RuntimeException("unknown identifier type '" + type + "'");
 		}

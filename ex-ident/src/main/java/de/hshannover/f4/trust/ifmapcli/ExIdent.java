@@ -66,16 +66,16 @@ import de.hshannover.f4.trust.ifmapj.messages.Requests;
 /**
  * A simple tool that publishes or deletes extended-identifier. When metadata is
  * published, the lifetime is set to be 'forever'.
- *
+ * 
  * @author Marius Rohde
- *
+ * 
  */
 public class ExIdent extends AbstractClient {
 
 	/**
 	 * 
 	 * Method to initialize the parser operations
-	 *
+	 * 
 	 * @param args
 	 *            the arguments submitted to the cli module
 	 * 
@@ -91,8 +91,11 @@ public class ExIdent extends AbstractClient {
 
 		ParserUtil.addExIdentifier(parser);
 
-		ParserUtil.addSecIdentifierType(parser, IdType.ipv4, IdType.ipv6, IdType.mac, IdType.dev, IdType.ar, IdType.id,
-				IdType.exid);
+		ParserUtil.addSecIdentifierType(parser, IdType.ipv4, IdType.ipv6,
+				IdType.mac, IdType.dev, IdType.ar, IdType.id, IdType.id_aik,
+				IdType.id_dist, IdType.id_dns, IdType.id_email,
+				IdType.id_hiphit, IdType.id_kerberos, IdType.id_sip,
+				IdType.id_tel, IdType.id_user, IdType.exid);
 		ParserUtil.addSecIdentifier(parser);
 
 		ParserUtil.addMetaFileInSystemIn(parser);
@@ -102,14 +105,15 @@ public class ExIdent extends AbstractClient {
 
 	/**
 	 * Method to start this module
-	 *
+	 * 
 	 */
 
 	public static void main(String[] args) {
 
 		initParser(args);
 
-		printParameters(KEY_OPERATION, new String[] { KEY_EX_IDENTIFIER, KEY_SEC_IDENTIFIER_TYPE, KEY_SEC_IDENTIFIER,
+		printParameters(KEY_OPERATION, new String[] { KEY_EX_IDENTIFIER,
+				KEY_SEC_IDENTIFIER_TYPE, KEY_SEC_IDENTIFIER,
 				KEY_META_FILE_IN_SYSTEM_IN });
 
 		// prepare identifiers
@@ -118,7 +122,8 @@ public class ExIdent extends AbstractClient {
 		Identifier identifier1 = null;
 
 		try {
-			identifier1 = Identifiers.createExtendedIdentity(new FileInputStream(exIdent));
+			identifier1 = Identifiers
+					.createExtendedIdentity(new FileInputStream(exIdent));
 		} catch (MarshalException e) {
 			e.printStackTrace();
 		} catch (FileNotFoundException e) {
@@ -126,25 +131,32 @@ public class ExIdent extends AbstractClient {
 		}
 
 		IdType identifierType2 = resource.get(KEY_SEC_IDENTIFIER_TYPE);
-		String identifierNameOrFileName2 = resource.getString(KEY_SEC_IDENTIFIER);
+		String identifierNameOrFileName2 = resource
+				.getString(KEY_SEC_IDENTIFIER);
 		Identifier identifier2 = null;
 
 		if (identifierType2 == null && identifierNameOrFileName2 != null) {
-			throw new RuntimeException("no identifier type specified for given identifier: "
-					+ identifierNameOrFileName2);
+			throw new RuntimeException(
+					"no identifier type specified for given identifier: "
+							+ identifierNameOrFileName2);
 		} else if (identifierType2 != null && identifierNameOrFileName2 == null) {
-			throw new RuntimeException("no identifier specified for given identifier type: " + identifierType2);
+			throw new RuntimeException(
+					"no identifier specified for given identifier type: "
+							+ identifierType2);
 		} else if (identifierType2 != null && identifierNameOrFileName2 != null) {
 			if (identifierType2 == IdType.exid) {
 				try {
-					identifier2 = Identifiers.createExtendedIdentity(new FileInputStream(identifierNameOrFileName2));
+					identifier2 = Identifiers
+							.createExtendedIdentity(new FileInputStream(
+									identifierNameOrFileName2));
 				} catch (MarshalException e) {
 					e.printStackTrace();
 				} catch (FileNotFoundException e) {
 					e.printStackTrace();
 				}
 			} else {
-				identifier2 = getIdentifier(identifierType2, identifierNameOrFileName2);
+				identifier2 = getIdentifier(identifierType2,
+						identifierNameOrFileName2);
 			}
 		}
 
@@ -160,7 +172,7 @@ public class ExIdent extends AbstractClient {
 	/**
 	 * 
 	 * Helper method to read inputstream of file or system in
-	 *
+	 * 
 	 * @param input
 	 *            A File Object specifying System in or a File
 	 * 
@@ -170,7 +182,8 @@ public class ExIdent extends AbstractClient {
 		Document metadata = null;
 
 		if (input.getName().equals("-")) {
-			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+			BufferedReader br = new BufferedReader(new InputStreamReader(
+					System.in));
 
 			// Workaround for multiline system in
 			String line = "";
@@ -205,7 +218,7 @@ public class ExIdent extends AbstractClient {
 	/**
 	 * 
 	 * helper Method to publish/delete the metadata
-	 *
+	 * 
 	 * @param identifier1
 	 *            the identifier1
 	 * @param identifier2
@@ -214,7 +227,8 @@ public class ExIdent extends AbstractClient {
 	 *            the metadata xml document
 	 * 
 	 */
-	private static void publishDeleteMetaData(Identifier identifier1, Identifier identifier2, Document metadata) {
+	private static void publishDeleteMetaData(Identifier identifier1,
+			Identifier identifier2, Document metadata) {
 
 		String nsPrefix = metadata.getChildNodes().item(0).getPrefix();
 		String nsUri = metadata.getChildNodes().item(0).getNamespaceURI();
@@ -228,22 +242,25 @@ public class ExIdent extends AbstractClient {
 
 			if (isUpdate(KEY_OPERATION)) {
 				if (identifier2 == null) {
-					PublishUpdate publishUpdate = Requests.createPublishUpdate(identifier1, metadata,
-							MetadataLifetime.forever);
+					PublishUpdate publishUpdate = Requests.createPublishUpdate(
+							identifier1, metadata, MetadataLifetime.forever);
 					request = Requests.createPublishReq(publishUpdate);
 				} else {
-					PublishUpdate publishUpdate = Requests.createPublishUpdate(identifier1, identifier2, metadata,
+					PublishUpdate publishUpdate = Requests.createPublishUpdate(
+							identifier1, identifier2, metadata,
 							MetadataLifetime.forever);
 					request = Requests.createPublishReq(publishUpdate);
 				}
 			} else {
 				PublishDelete publishDelete;
-				String filter = String.format(nsPrefix + ":" + elementname + "[@ifmap-publisher-id='%s']",
-						ssrc.getPublisherId());
+				String filter = String.format(nsPrefix + ":" + elementname
+						+ "[@ifmap-publisher-id='%s']", ssrc.getPublisherId());
 				if (identifier2 == null) {
-					publishDelete = Requests.createPublishDelete(identifier1, filter);
+					publishDelete = Requests.createPublishDelete(identifier1,
+							filter);
 				} else {
-					publishDelete = Requests.createPublishDelete(identifier1, identifier2, filter);
+					publishDelete = Requests.createPublishDelete(identifier1,
+							identifier2, filter);
 				}
 				publishDelete.addNamespaceDeclaration(nsPrefix, nsUri);
 				request = Requests.createPublishReq(publishDelete);
