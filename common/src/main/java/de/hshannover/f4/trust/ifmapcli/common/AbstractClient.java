@@ -39,22 +39,21 @@
 package de.hshannover.f4.trust.ifmapcli.common;
 
 import java.io.FileNotFoundException;
-import java.io.InputStream;
 import java.util.Collection;
 
-import javax.net.ssl.TrustManager;
 import javax.xml.transform.TransformerException;
-
-import org.w3c.dom.Document;
 
 import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
+
+import org.w3c.dom.Document;
+
 import de.hshannover.f4.trust.ifmapcli.common.enums.IdType;
 import de.hshannover.f4.trust.ifmapj.IfmapJ;
-import de.hshannover.f4.trust.ifmapj.IfmapJHelper;
 import de.hshannover.f4.trust.ifmapj.channel.SSRC;
+import de.hshannover.f4.trust.ifmapj.config.BasicAuthConfig;
 import de.hshannover.f4.trust.ifmapj.exception.InitializationException;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifier;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifiers;
@@ -233,13 +232,17 @@ public abstract class AbstractClient {
 	}
 
 	protected static SSRC createSSRC() throws FileNotFoundException, InitializationException {
-		InputStream is = Common.prepareTruststoreIs(resource.getString(ParserUtil.KEYSTORE_PATH));
-		TrustManager[] tms = IfmapJHelper.getTrustManagers(is, resource.getString(ParserUtil.KEYSTORE_PASS));
-		SSRC ssrc = IfmapJ.createSSRC(
-			resource.getString(ParserUtil.URL),
-			resource.getString(ParserUtil.USER),
-			resource.getString(ParserUtil.PASS),
-			tms);
+		boolean threadSafe = true;
+		int initialConnectionTimeout = 120 * 1000;
+		BasicAuthConfig config = new BasicAuthConfig(
+				resource.getString(ParserUtil.URL), 
+				resource.getString(ParserUtil.USER), 
+				resource.getString(ParserUtil.PASS), 
+				resource.getString(ParserUtil.KEYSTORE_PATH), 
+				resource.getString(ParserUtil.KEYSTORE_PASS), 
+				threadSafe, 
+				initialConnectionTimeout);
+		SSRC ssrc = IfmapJ.createSsrc(config);
 
 		return ssrc;
 	}
