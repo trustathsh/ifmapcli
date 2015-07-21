@@ -45,6 +45,19 @@
 				<include>de.hshannover.f4.trust.ifmapcli:featureSingle</include>
                 <include>de.hshannover.f4.trust.ifmapcli:ex-ident</include>
                 <include>de.hshannover.f4.trust.ifmapcli:ex-meta</include>
+                <include>de.hshannover.f4.trust.ifmapcli:backhl-pol</include>
+                <include>de.hshannover.f4.trust.ifmapcli:bhi-addr</include>
+                <include>de.hshannover.f4.trust.ifmapcli:bhi-cert</include>
+                <include>de.hshannover.f4.trust.ifmapcli:bhi-id</include>
+                <include>de.hshannover.f4.trust.ifmapcli:dev-char-ics</include>
+                <include>de.hshannover.f4.trust.ifmapcli:dn-hit</include>
+				<include>de.hshannover.f4.trust.ifmapcli:group-xref</include>
+				<include>de.hshannover.f4.trust.ifmapcli:ifmap-client-has-task</include>
+				<include>de.hshannover.f4.trust.ifmapcli:manager-of</include>
+				<include>de.hshannover.f4.trust.ifmapcli:member-of</include>
+				<include>de.hshannover.f4.trust.ifmapcli:obs-by</include>
+				<include>de.hshannover.f4.trust.ifmapcli:overlay-pol</include>
+				<include>de.hshannover.f4.trust.ifmapcli:prot-by</include>
 			</includes>
 			<binaries>
 				<includeDependencies>false</includeDependencies>

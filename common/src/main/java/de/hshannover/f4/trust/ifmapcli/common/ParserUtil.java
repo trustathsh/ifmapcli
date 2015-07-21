@@ -59,7 +59,7 @@ public class ParserUtil {
 	public static final String KEYSTORE_PASS = "keystore-pass";
 
 	public static final String VERBOSE = "verbose";
-	
+
 	public static void addConnectionArgumentsTo(ArgumentParser parser) {
 		// get environment variables
 		String url = System.getenv("IFMAP_URL");
@@ -144,6 +144,18 @@ public class ParserUtil {
 				.help("username value of the identity identifier");
 	}
 
+	public static void addDistinguishedNameIdentity(ArgumentParser parser) {
+		parser.addArgument("distinguished-name").type(String.class)
+				.dest(AbstractClient.KEY_IDENTITY_DISTINGUISHED_NAME)
+				.help("distinguished-name value of the identity identifier");
+	}
+
+	public static void addHipHitIdentity(ArgumentParser parser) {
+		parser.addArgument("hip-hit").type(String.class)
+				.dest(AbstractClient.KEY_IDENTITY_HIP_HIT)
+				.help("hip-hit value of the identity identifier");
+	}
+
 	public static void addCapability(ArgumentParser parser) {
 		parser.addArgument("capability").type(String.class)
 				.dest(AbstractClient.KEY_CAP_NAME)
@@ -172,58 +184,78 @@ public class ParserUtil {
 		parser.addArgument("identifier").type(String.class)
 				.dest(AbstractClient.KEY_IDENTIFIER).help("the identifier");
 	}
-	
+
 	public static void addIdentifierOrEx(ArgumentParser parser) {
 		parser.addArgument("identifier").type(String.class)
 				.dest(AbstractClient.KEY_IDENTIFIER)
 				.help("the identifier or filename for extended identifier");
 	}
-	
+
 	public static void addExIdentifier(ArgumentParser parser) {
 		parser.addArgument("extended-identifier").type(Arguments.fileType().verifyCanRead())
 				.dest(AbstractClient.KEY_EX_IDENTIFIER).help("the path to the xml file");
 	}
-	
+
+	public static void addIcsBackhaulInterface(ArgumentParser parser) {
+		parser.addArgument("backhaul-interface").type(String.class)
+				.dest(AbstractClient.KEY_ICS_BACKHAUL_INTERFACE).help("unique name of a given BHI");
+	}
+
+	public static void addIcsBackhaulInterfaceTwo(ArgumentParser parser) {
+		parser.addArgument("backhaul-interface").type(String.class)
+				.dest(AbstractClient.KEY_ICS_BACKHAUL_INTERFACE_TWO).help("unique name of a given BHI");
+	}
+
+	public static void addIcsOverlayManagerGroup(ArgumentParser parser) {
+		parser.addArgument("overlay-manager-group").type(String.class)
+				.dest(AbstractClient.KEY_ICS_OVERLAY_MANAGER_GROUP).help("name of a particular Overlay Manager group");
+	}
+
+	public static void addIcsOverlayNetworkGroup(ArgumentParser parser) {
+		parser.addArgument("overlay-network-group").type(String.class)
+				.dest(AbstractClient.KEY_ICS_OVERLAY_NETWORK_GROUP).help("name of the overlay network");
+	}
+
 	public static void addElementName(ArgumentParser parser) {
 		parser.addArgument("--element-name").type(String.class).setDefault("")
 				.dest(AbstractClient.KEY_ELEMENT_NAME).help("the name of extended metadata");
 	}
-	
+
 	public static void addMetaFileInSystemIn(ArgumentParser parser) {
 		parser.addArgument("--meta-in").type(Arguments.fileType().acceptSystemIn().verifyCanRead())
 				.dest(AbstractClient.KEY_META_FILE_IN_SYSTEM_IN).help("Meta filename or - for system in");
 	}
-	
+
 	public static void addCardinality(ArgumentParser parser) {
 		parser.addArgument("--cardinality").type(String.class)
 				.dest(AbstractClient.KEY_CARDINALITY).choices("singleValue","multiValue").setDefault("singleValue")
 				.help("the cardinality of extended metadata");
 	}
-	
+
 	public static void addAttributeName(ArgumentParser parser) {
 		parser.addArgument("--attribute-name").type(String.class)
 				.dest(AbstractClient.KEY_ATTRIBUTE_NAME).setDefault("")
 				.help("the name of the attribute of a extended metadata");
 	}
-	
+
 	public static void addAttributeValue(ArgumentParser parser) {
 		parser.addArgument("--attribute-value").type(String.class)
 				.dest(AbstractClient.KEY_ATTRIBUTE_VALUE).setDefault("")
 				.help("the value of the attribute of a extended metadata");
 	}
-	
+
 	public static void addSecIdentifierType(ArgumentParser parser, IdType... types) {
 		parser.addArgument("--sec-identifier-type").type(IdType.class)
 				.dest(AbstractClient.KEY_SEC_IDENTIFIER_TYPE).choices(types)
 				.help("the type of the second identifier");
 	}
-	
+
 	public static void addSecIdentifier(ArgumentParser parser) {
 		parser.addArgument("--sec-identifier").type(String.class)
 				.dest(AbstractClient.KEY_SEC_IDENTIFIER)
 				.help("the second identifier name or filename for extended identifier");
 	}
-	
+
 	public static void addOtherIdentifierType(ArgumentParser parser,
 			IdType... types) {
 		parser.addArgument("other-identifier-type").type(IdType.class)
@@ -274,7 +306,8 @@ public class ParserUtil {
 		parser.addArgument("--terminal-identifier-type", "-tt")
 				.type(String.class)
 				.dest(AbstractClient.KEY_TERMINAL_IDENTIFIER_TYPE)
-				.help("comma-separated type of the terminal identifier(s): ip-address,mac-address,device,access-request,identity");
+				.help("comma-separated type of the terminal identifier(s):"
+				+ " ip-address,mac-address,device,access-request,identity");
 	}
 
 	public static void addNamespacePrefix(ArgumentParser parser) {
@@ -549,7 +582,7 @@ public class ParserUtil {
 		.dest(AbstractClient.KEY_ENFORCEMENT_REASON)
 		.help("reason of the enforcement");
 	}
-	
+
 	public static void addUnexpBehaviorType(ArgumentParser parser) {
 		parser.addArgument("--unexp-behavior-type", "-ubt").type(String.class)
 		.dest(AbstractClient.KEY_UNEXP_BEHAVIOR_TYPE)
@@ -596,5 +629,36 @@ public class ParserUtil {
 				WlanSecurityEnum.tkip,
 				WlanSecurityEnum.wep)
 		.help("type(s) of the WLAN management security");
+	}
+
+	public static void addIcsNetworkName(ArgumentParser parser) {
+		parser.addArgument("network-name").type(String.class)
+		.dest(AbstractClient.KEY_ICS_NETWORK_NAME)
+		.help("name of an overlay network");
+	}
+
+	public static void addIcsPolicy(ArgumentParser parser) {
+		parser.addArgument("policy").type(String.class)
+		.dest(AbstractClient.KEY_ICS_POLICY)
+		.help("MUST have a value of either allow or deny");
+	}
+
+	public static void addIcsCertificate(ArgumentParser parser) {
+		parser.addArgument("certificate").type(String.class)
+		.dest(AbstractClient.KEY_ICS_CERTIFICATE)
+		.help("X.509 certificate");
+	}
+
+	public static void addIcsLdapUri(ArgumentParser parser) {
+		parser.addArgument("ldap-uri").type(String.class)
+		.dest(AbstractClient.KEY_ICS_LDAP_URI)
+		.help("contains URI for LDAP directory search specification");
+	}
+
+	public static void addContAutchRelationship(ArgumentParser parser) {
+		parser.addArgument("relationship").type(String.class)
+		.dest(AbstractClient.KEY_CONTAUTH_RELATIONSHIP)
+		.help("relationship, which equals the value of the relationship "
+				+ "attribute of the ifmap-client-has-task metadata item");
 	}
 }

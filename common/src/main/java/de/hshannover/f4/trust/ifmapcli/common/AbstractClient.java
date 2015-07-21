@@ -36,6 +36,7 @@
  * limitations under the License.
  * #L%
  */
+
 package de.hshannover.f4.trust.ifmapcli.common;
 
 import java.io.FileNotFoundException;
@@ -55,33 +56,42 @@ import de.hshannover.f4.trust.ifmapj.IfmapJ;
 import de.hshannover.f4.trust.ifmapj.channel.SSRC;
 import de.hshannover.f4.trust.ifmapj.config.BasicAuthConfig;
 import de.hshannover.f4.trust.ifmapj.exception.InitializationException;
+import de.hshannover.f4.trust.ifmapj.extendedIdentifiers.IcsIdentifiers;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifier;
 import de.hshannover.f4.trust.ifmapj.identifier.Identifiers;
 import de.hshannover.f4.trust.ifmapj.identifier.IdentityType;
 import de.hshannover.f4.trust.ifmapj.messages.PublishRequest;
 import de.hshannover.f4.trust.ifmapj.messages.ResultItem;
 import de.hshannover.f4.trust.ifmapj.messages.SearchResult;
+import de.hshannover.f4.trust.ifmapj.metadata.ContentAuthorizationMetadataFactory;
+import de.hshannover.f4.trust.ifmapj.metadata.IcsSecurityMetadataFactory;
 import de.hshannover.f4.trust.ifmapj.metadata.StandardIfmapMetadataFactory;
 
 public abstract class AbstractClient {
 
 	public static final String KEY_OPERATION = "publishOperation";
-	
+
 	// File and System IO
 	public static final String KEY_META_FILE_IN_SYSTEM_IN = "meta-file-in-system-in";
-	
+
 	// Identifier
 	public static final String KEY_ACCESS_REQUEST = "accessRequest";
 	public static final String KEY_DEVICE = "device";
 	public static final String KEY_IP = "ip-address";
 	public static final String KEY_MAC = "mac";
 	public static final String KEY_IDENTITY_USERNAME = "username";
+	public static final String KEY_IDENTITY_DISTINGUISHED_NAME = "distinguished-name";
+	public static final String KEY_IDENTITY_HIP_HIT = "hip-hit";
 	public static final String KEY_IDENTIFIER = "identifier";
 	public static final String KEY_IDENTIFIER_TYPE = "identifierType";
 	public static final String KEY_OTHER_IDENTIFIER_TYPE = "other-identifier-type";
 	public static final String KEY_OTHER_IDENTIFIER = "other-identifier";
 	public static final String KEY_EX_IDENTIFIER = "extended-identifier";
-	
+	public static final String KEY_ICS_BACKHAUL_INTERFACE = "backhaul-interface";
+	public static final String KEY_ICS_BACKHAUL_INTERFACE_TWO = "backhaul-interface";
+	public static final String KEY_ICS_OVERLAY_MANAGER_GROUP = "overlay-manager-group";
+	public static final String KEY_ICS_OVERLAY_NETWORK_GROUP = "overlay-network-group";
+
 	// Metadata
 	public static final String KEY_ADMINISTRATIVE_DOMAIN = "administrative-domain";
 	public static final String KEY_ROLE = "role";
@@ -104,7 +114,7 @@ public abstract class AbstractClient {
 	public static final String KEY_OS_VERSION = "os-version";
 	public static final String KEY_DEVICE_TYPE = "device-type";
 	public static final String KEY_DISCOVERY_METHOD = "discovery-method";
-	
+
 	// device-characteristic, event, location, enf-report, unexpected-behavior
 	public static final String KEY_DISCOVERED_TIME = "discovered-time";
 	public static final String KEY_DISCOVERER_ID = "discoverer-id";
@@ -113,7 +123,7 @@ public abstract class AbstractClient {
 	public static final String KEY_CONFIDENCE = "confidence";
 	public static final String KEY_SIGNIFICANCE = "significance";
 	public static final String KEY_INFORMATION = "information";
-	
+
 	// search and subscribe
 	public static final String KEY_MATCH_LINKS = "matchLinks";
 	public static final String KEY_MAX_DEPTH = "maxDepth";
@@ -164,20 +174,29 @@ public abstract class AbstractClient {
 	// location
 	public static final String KEY_LOCATION_INFORMATION_TYPE = "location-information-type";
 	public static final String KEY_LOCATION_INFORMATION_VALUE = "location-information-value";
-	
+
 	// enforcement-report
 	public static final String KEY_ENFORCEMENT_ACTION = "enforcement-action";
 	public static final String KEY_ENFORCEMENT_REASON = "enforcement-reason";
 
 	// unexpected-behavior
 	public static final String KEY_UNEXP_BEHAVIOR_TYPE = "unexp-behavior-type";
-	
+
 	// wlan-information
 	public static final String KEY_WLAN_INFORMATION_SSID = "wlan-info-ssid";
 	public static final String KEY_WLAN_INFORMATION_UNICAST_SECURITY = "wlan-info-unicast-security";
 	public static final String KEY_WLAN_INFORMATION_GROUP_SECURITY = "wlan-info-group-security";
 	public static final String KEY_WLAN_INFORMATION_MANAGEMENT_SECURITY = "wlan-info-management-security";
-	
+
+	// ICS-attributes
+	public static final String KEY_ICS_NETWORK_NAME = "network-name";
+	public static final String KEY_ICS_POLICY = "policy";
+	public static final String KEY_ICS_CERTIFICATE = "certificate";
+	public static final String KEY_ICS_LDAP_URI = "ldap-uri";
+
+	//Content-Authorization-attributes
+	public static final String KEY_CONTAUTH_RELATIONSHIP = "relationship";
+
 	protected static String command;
 
 	protected static Namespace resource;
@@ -186,6 +205,12 @@ public abstract class AbstractClient {
 	// factory classes
 	protected static StandardIfmapMetadataFactory mf = IfmapJ
 			.createStandardMetadataFactory();
+
+	protected static IcsSecurityMetadataFactory icsmf = IfmapJ
+			.createIcsSecurityMetadataFactory();
+
+	protected static ContentAuthorizationMetadataFactory conauthmf = IfmapJ
+			.createContentAuthorizationMetadataFactory();
 
 	protected static ArgumentParser createDefaultParser() {
 		ArgumentParser parser = ArgumentParsers.newArgumentParser(command);
@@ -274,7 +299,7 @@ public abstract class AbstractClient {
 	protected static Identifier getIdentifier() {
 		return getIdentifier((IdType) resource.get(KEY_IDENTIFIER_TYPE), resource.getString(KEY_IDENTIFIER));
 	}
-	
+
 	protected static Identifier getIdentifier(IdType type, String name) {
 		switch (type) {
 		case ipv4:
@@ -307,6 +332,10 @@ public abstract class AbstractClient {
 			return Identifiers.createIdentity(IdentityType.telUri, name);
 		case id_user:
 			return Identifiers.createIdentity(IdentityType.userName, name);
+		case ics_bhi:
+			return IcsIdentifiers.createBackhaulInterface(name);
+		case ics_ovNetwGr:
+			return IcsIdentifiers.createOverlayNetworkGroup(name);
 		default:
 			throw new RuntimeException("unknown identifier type '" + type + "'");
 		}
