@@ -74,6 +74,7 @@ public class IfmapClientHasTask extends AbstractClient {
 		ParserUtil.addPublishOperation(parser);
 		ParserUtil.addDistinguishedNameIdentity(parser);
 		ParserUtil.addIcsOverlayNetworkGroup(parser);
+		ParserUtil.addContAutchRelationship(parser);
 
 		parseParameters(parser, args);
 

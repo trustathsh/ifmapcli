@@ -185,6 +185,17 @@ public class ParserUtil {
 				.dest(AbstractClient.KEY_IDENTIFIER).help("the identifier");
 	}
 
+	public static void addIdentifierTypeTwo(ArgumentParser parser, IdType... types) {
+		parser.addArgument("identifier-type-two").type(IdType.class)
+				.dest(AbstractClient.KEY_IDENTIFIER_TYPE_TWO).choices(types)
+				.help("the type of the identifier");
+	}
+
+	public static void addIdentifierTwo(ArgumentParser parser) {
+		parser.addArgument("identifier-two").type(String.class)
+				.dest(AbstractClient.KEY_IDENTIFIER_TWO).help("the identifier");
+	}
+
 	public static void addIdentifierOrEx(ArgumentParser parser) {
 		parser.addArgument("identifier").type(String.class)
 				.dest(AbstractClient.KEY_IDENTIFIER)
@@ -202,7 +213,7 @@ public class ParserUtil {
 	}
 
 	public static void addIcsBackhaulInterfaceTwo(ArgumentParser parser) {
-		parser.addArgument("backhaul-interface").type(String.class)
+		parser.addArgument("backhaul-interface-two").type(String.class)
 				.dest(AbstractClient.KEY_ICS_BACKHAUL_INTERFACE_TWO).help("unique name of a given BHI");
 	}
 

@@ -71,6 +71,7 @@ public class GroupXref extends AbstractClient {
 		ArgumentParser parser = createDefaultParser();
 		ParserUtil.addPublishOperation(parser);
 		ParserUtil.addIcsOverlayManagerGroup(parser);
+		ParserUtil.addIcsLdapUri(parser);
 
 		parseParameters(parser, args);
 

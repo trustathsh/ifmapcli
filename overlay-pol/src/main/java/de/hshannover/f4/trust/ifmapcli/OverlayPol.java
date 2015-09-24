@@ -53,6 +53,8 @@ import de.hshannover.f4.trust.ifmapj.messages.PublishDelete;
 import de.hshannover.f4.trust.ifmapj.messages.PublishRequest;
 import de.hshannover.f4.trust.ifmapj.messages.PublishUpdate;
 import de.hshannover.f4.trust.ifmapj.messages.Requests;
+import net.sourceforge.argparse4j.inf.Subparser;
+import net.sourceforge.argparse4j.inf.Subparsers;
 
 /**
  * A simple tool that publishes or deletes overlay-policy metadata.<br/>
@@ -72,19 +74,32 @@ public class OverlayPol extends AbstractClient {
 		ArgumentParser parser = createDefaultParser();
 		ParserUtil.addPublishOperation(parser);
 
+		Subparsers subparsers = parser.addSubparsers().dest("target").help("sub-command help");
+		Subparser parserA = subparsers.addParser("link").help("if the metadata is connectet to two idetifiers");
+		Subparser parserB = subparsers.addParser("identifier").help("if the metadata is connecteted to one identifier");
+
+		ParserUtil.addIcsBackhaulInterface(parserB);
+		ParserUtil.addIcsNetworkName(parserB);
+		ParserUtil.addIcsPolicy(parserB);
+
+		ParserUtil.addIcsBackhaulInterface(parserA);
+		ParserUtil.addIdentifierType(parserA, IdType.ipv4, IdType.ipv6, IdType.mac);
+		ParserUtil.addIdentifier(parserA);
+		ParserUtil.addIcsNetworkName(parserA);
+		ParserUtil.addIcsPolicy(parserA);
+
+		parseParameters(parser, args);
+
 		//metadata is assigned to an backhaul-interface identifier
-		if (args.length == 3) {
-			ParserUtil.addIcsBackhaulInterface(parser);
-			ParserUtil.addIcsNetworkName(parser);
-			ParserUtil.addIcsPolicy(parser);
-			parseParameters(parser, args);
+		if (resource.getString("target").equals("identifier")) {
+			
 			printParameters(KEY_OPERATION, new String[] {KEY_ICS_BACKHAUL_INTERFACE,
 					KEY_ICS_NETWORK_NAME, KEY_ICS_POLICY});
 
 			String bhi = resource.getString(KEY_ICS_BACKHAUL_INTERFACE);
 
 			// prepare identifiers
-			Identifier bhiIdentifier = IcsIdentifiers.createOverlayNetworkGroup(bhi);
+			Identifier bhiIdentifier = IcsIdentifiers.createBackhaulInterface(bhi);
 
 			// prepare metadata
 			String netwName = resource.getString(KEY_ICS_NETWORK_NAME);
@@ -110,12 +125,7 @@ public class OverlayPol extends AbstractClient {
 			// publish
 			publishIfmapData(request);
 		} else { //metadata associates a backhaul-interface identifier with a ip or mac identifier
-			ParserUtil.addIcsBackhaulInterface(parser);
-			ParserUtil.addIcsBackhaulInterface(parser);
-			ParserUtil.addIdentifierType(parser, IdType.ipv4, IdType.ipv6, IdType.mac);
-			ParserUtil.addIcsNetworkName(parser);
-			ParserUtil.addIcsPolicy(parser);
-			parseParameters(parser, args);
+
 			printParameters(KEY_OPERATION, new String[] {KEY_ICS_BACKHAUL_INTERFACE, KEY_IDENTIFIER_TYPE,
 					KEY_IDENTIFIER, KEY_ICS_NETWORK_NAME, KEY_ICS_POLICY});
 

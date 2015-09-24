@@ -86,7 +86,7 @@ public class DnHit extends AbstractClient {
 		Identifier hipHitIdentifier = Identifiers.createIdentity(IdentityType.hipHit, hipHit);
 
 		// prepare metadata
-		Document metadata = icsmf.createBhiAdd();
+		Document metadata = icsmf.createDnHit();
 
 		PublishRequest request;
 		// update or delete

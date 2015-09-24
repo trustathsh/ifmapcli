@@ -84,7 +84,7 @@ public class ProtBy extends AbstractClient {
 		String identifierName = resource.getString(KEY_IDENTIFIER);
 
 		// prepare identifiers
-		Identifier bhiIdentifier = IcsIdentifiers.createOverlayManagerGroup(bhi);
+		Identifier bhiIdentifier = IcsIdentifiers.createBackhaulInterface(bhi);
 		Identifier identifier = getIdentifier(identifierType, identifierName);
 
 		// prepare metadata

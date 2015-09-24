@@ -71,6 +71,7 @@ public class BhiCert extends AbstractClient {
 		ArgumentParser parser = createDefaultParser();
 		ParserUtil.addPublishOperation(parser);
 		ParserUtil.addDistinguishedNameIdentity(parser);
+		ParserUtil.addIcsCertificate(parser);
 
 		parseParameters(parser, args);
 

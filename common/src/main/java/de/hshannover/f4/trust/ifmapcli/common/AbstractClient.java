@@ -84,11 +84,13 @@ public abstract class AbstractClient {
 	public static final String KEY_IDENTITY_HIP_HIT = "hip-hit";
 	public static final String KEY_IDENTIFIER = "identifier";
 	public static final String KEY_IDENTIFIER_TYPE = "identifierType";
+	public static final String KEY_IDENTIFIER_TWO = "identifier-two";
+	public static final String KEY_IDENTIFIER_TYPE_TWO = "identifierType-two";
 	public static final String KEY_OTHER_IDENTIFIER_TYPE = "other-identifier-type";
 	public static final String KEY_OTHER_IDENTIFIER = "other-identifier";
 	public static final String KEY_EX_IDENTIFIER = "extended-identifier";
 	public static final String KEY_ICS_BACKHAUL_INTERFACE = "backhaul-interface";
-	public static final String KEY_ICS_BACKHAUL_INTERFACE_TWO = "backhaul-interface";
+	public static final String KEY_ICS_BACKHAUL_INTERFACE_TWO = "backhaul-interface-two";
 	public static final String KEY_ICS_OVERLAY_MANAGER_GROUP = "overlay-manager-group";
 	public static final String KEY_ICS_OVERLAY_NETWORK_GROUP = "overlay-network-group";
 
@@ -336,6 +338,8 @@ public abstract class AbstractClient {
 			return IcsIdentifiers.createBackhaulInterface(name);
 		case ics_ovNetwGr:
 			return IcsIdentifiers.createOverlayNetworkGroup(name);
+		case ics_ovManagerGr:
+			return IcsIdentifiers.createOverlayManagerGroup(name);
 		default:
 			throw new RuntimeException("unknown identifier type '" + type + "'");
 		}

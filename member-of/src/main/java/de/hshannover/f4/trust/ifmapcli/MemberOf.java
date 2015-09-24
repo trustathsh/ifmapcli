@@ -71,22 +71,23 @@ public class MemberOf extends AbstractClient {
 
 		ArgumentParser parser = createDefaultParser();
 		ParserUtil.addPublishOperation(parser);
-		ParserUtil.addIcsOverlayManagerGroup(parser);
-		ParserUtil.addIdentifierType(parser, IdType.ics_bhi, IdType.id_dist);
+		ParserUtil.addIdentifierType(parser, IdType.ics_ovNetwGr, IdType.ics_ovManagerGr);
 		ParserUtil.addIdentifier(parser);
+		ParserUtil.addIdentifierTypeTwo(parser, IdType.ics_bhi, IdType.id_dist);
+		ParserUtil.addIdentifierTwo(parser);
 
 		parseParameters(parser, args);
 
-		printParameters(KEY_OPERATION, new String[] {KEY_ICS_OVERLAY_MANAGER_GROUP ,
-				KEY_IDENTIFIER_TYPE, KEY_IDENTIFIER});
+		printParameters(KEY_OPERATION, new String[] {KEY_IDENTIFIER_TYPE, KEY_IDENTIFIER, KEY_IDENTIFIER_TYPE_TWO, KEY_IDENTIFIER_TWO});
 
-		String ovManGr = resource.getString(KEY_ICS_OVERLAY_MANAGER_GROUP);
 		IdType identifierType = resource.get(KEY_IDENTIFIER_TYPE);
 		String identifierName = resource.getString(KEY_IDENTIFIER);
+		IdType identifierTypeTwo = resource.get(KEY_IDENTIFIER_TYPE_TWO);
+		String identifierNameTwo = resource.getString(KEY_IDENTIFIER_TWO);
 
 		// prepare identifiers
-		Identifier ovManGrIdentifier = IcsIdentifiers.createOverlayManagerGroup(ovManGr);
 		Identifier identifier = getIdentifier(identifierType, identifierName);
+		Identifier identifierTwo = getIdentifier(identifierTypeTwo, identifierNameTwo);
 
 		// prepare metadata
 		Document metadata = icsmf.createMembOf();
@@ -94,12 +95,11 @@ public class MemberOf extends AbstractClient {
 		PublishRequest request;
 		// update or delete
 		if (isUpdate(KEY_OPERATION)) {
-			PublishUpdate publishUpdate = Requests.createPublishUpdate(ovManGrIdentifier,
-					identifier, metadata, MetadataLifetime.forever);
+			PublishUpdate publishUpdate = Requests.createPublishUpdate(identifier, identifierTwo, metadata, MetadataLifetime.forever);
 			request = Requests.createPublishReq(publishUpdate);
 		} else {
 			String filter = "ics-meta:member-of";
-			PublishDelete publishDelete = Requests.createPublishDelete(ovManGrIdentifier, identifier, filter);
+			PublishDelete publishDelete = Requests.createPublishDelete(identifier, identifierTwo, filter);
 			publishDelete.addNamespaceDeclaration(IfmapStrings.ICS_METADATA_PREFIX, IfmapStrings.ICS_METADATA_NS_URI);
 			request = Requests.createPublishReq(publishDelete);
 		}

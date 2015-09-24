@@ -51,6 +51,8 @@ import de.hshannover.f4.trust.ifmapj.messages.PublishDelete;
 import de.hshannover.f4.trust.ifmapj.messages.PublishRequest;
 import de.hshannover.f4.trust.ifmapj.messages.PublishUpdate;
 import de.hshannover.f4.trust.ifmapj.messages.Requests;
+import net.sourceforge.argparse4j.inf.Subparser;
+import net.sourceforge.argparse4j.inf.Subparsers;
 
 /**
  * A simple tool that publishes or deletes bhi-address metadata.<br/>
@@ -70,12 +72,24 @@ public class BackhlPol extends AbstractClient {
 		ArgumentParser parser = createDefaultParser();
 		ParserUtil.addPublishOperation(parser);
 
+		Subparsers subparsers = parser.addSubparsers().dest("target").help("sub-command help");
+		Subparser parserA = subparsers.addParser("link").help("if the metadata is connectet to two idetifiers");
+		Subparser parserB = subparsers.addParser("identifier").help("if the metadata is connecteted to one identifier");
+
+		ParserUtil.addIcsOverlayNetworkGroup(parserB);
+		ParserUtil.addIcsNetworkName(parserB);
+		ParserUtil.addIcsPolicy(parserB);
+
+		ParserUtil.addIcsBackhaulInterface(parserA);
+		ParserUtil.addIcsBackhaulInterfaceTwo(parserA);
+		ParserUtil.addIcsNetworkName(parserA);
+		ParserUtil.addIcsPolicy(parserA);
+
+		parseParameters(parser, args);
+
 		//metadata is assigned to an overlay-network-group identifier
-		if (args.length == 3) {
-			ParserUtil.addIcsOverlayNetworkGroup(parser);
-			ParserUtil.addIcsNetworkName(parser);
-			ParserUtil.addIcsPolicy(parser);
-			parseParameters(parser, args);
+		if (resource.getString("target").equals("identifier")) {
+
 			printParameters(KEY_OPERATION, new String[] {KEY_ICS_OVERLAY_NETWORK_GROUP,
 					KEY_ICS_NETWORK_NAME, KEY_ICS_POLICY});
 
@@ -108,11 +122,7 @@ public class BackhlPol extends AbstractClient {
 			// publish
 			publishIfmapData(request);
 		} else { //metadata associates two backhaul-interface identifiers
-			ParserUtil.addIcsBackhaulInterface(parser);
-			ParserUtil.addIcsBackhaulInterfaceTwo(parser);
-			ParserUtil.addIcsNetworkName(parser);
-			ParserUtil.addIcsPolicy(parser);
-			parseParameters(parser, args);
+			
 			printParameters(KEY_OPERATION, new String[] {KEY_ICS_BACKHAUL_INTERFACE,
 					KEY_ICS_BACKHAUL_INTERFACE_TWO, KEY_ICS_NETWORK_NAME, KEY_ICS_POLICY});
 
