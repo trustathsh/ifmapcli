@@ -69,6 +69,7 @@ public class DevChar extends AbstractClient {
 		ArgumentParser parser = createDefaultParser();
 		ParserUtil.addPublishOperation(parser);
 		ParserUtil.addIdentifierType(parser, IdType.ipv4, IdType.ipv6, IdType.mac, IdType.ar);
+        ParserUtil.addIdentifier(parser);
 		ParserUtil.addDevice(parser);		
 		ParserUtil.addManufacturer(parser);
 		ParserUtil.addModel(parser);
